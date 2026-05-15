@@ -442,39 +442,36 @@ window.addEventListener('keyup', e => {
 });
 
 function bindTouch() {
+  const map = [
+    ['btnLeft',  'left'],
+    ['btnRight', 'right'],
+    ['btnGas',   'accelerate'],
+    ['btnBrake', 'brake'],
+  ];
+  for (const [id, key] of map) {
+    const el = document.getElementById(id);
+    if (!el) continue;
+    const press = (ev) => {
+      ev.preventDefault();
+      state.inputs[key] = true;
+      el.classList.add('active');
+    };
+    const release = (ev) => {
+      ev.preventDefault();
+      state.inputs[key] = false;
+      el.classList.remove('active');
+    };
+    el.addEventListener('touchstart', press,   { passive: false });
+    el.addEventListener('touchend',   release, { passive: false });
+    el.addEventListener('touchcancel',release, { passive: false });
+    el.addEventListener('mousedown',  press);
+    el.addEventListener('mouseup',    release);
+    el.addEventListener('mouseleave', release);
+  }
+  // Evitar que el canvas haga zoom o scroll al tocar fuera de los botones
   const canvas = document.getElementById('canvas');
-  canvas.addEventListener('touchstart', onTouchMove, { passive: false });
-  canvas.addEventListener('touchmove',  onTouchMove, { passive: false });
-  canvas.addEventListener('touchend',   onTouchEnd,  { passive: false });
-  canvas.addEventListener('touchcancel',onTouchEnd,  { passive: false });
-}
-// Cualquier toque acelera; el lado del toque decide la dirección.
-function onTouchMove(e) {
-  e.preventDefault();
-  state.inputs.left = false;
-  state.inputs.right = false;
-  state.inputs.accelerate = false;
-  state.inputs.brake = false;
-  for (const t of e.touches) {
-    const w = window.innerWidth, h = window.innerHeight;
-    // Tercio inferior central = freno
-    if (t.clientY > h * 0.78 && t.clientX > w * 0.30 && t.clientX < w * 0.70) {
-      state.inputs.brake = true;
-      continue;
-    }
-    state.inputs.accelerate = true;
-    if (t.clientX < w * 0.5) state.inputs.left = true;
-    else state.inputs.right = true;
-  }
-}
-function onTouchEnd(e) {
-  e.preventDefault();
-  if (e.touches.length === 0) {
-    state.inputs.left = false;
-    state.inputs.right = false;
-    state.inputs.accelerate = false;
-    state.inputs.brake = false;
-  }
+  canvas.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
+  canvas.addEventListener('touchmove',  (e) => e.preventDefault(), { passive: false });
 }
 
 function togglePause() {
@@ -912,20 +909,27 @@ function update(dt, now) {
   const near = nearestSegment([car.x, car.y], tr.smooth, state.segIndex);
   state.segIndexPrev = state.segIndex;
   state.segIndex = near.idx;
-  // Distancia al CENTERLINE como segmento (no al punto más cercano) para evitar
-  // que el auto se considere fuera por estar entre dos waypoints
-  const idx = state.segIndex;
+  // Distancia mínima al CENTERLINE en los segmentos vecinos (no solo el actual)
+  // — evita falsos positivos en curvas donde el auto está entre waypoints.
   const nLen = tr.smooth.length;
-  const a = tr.smooth[idx];
-  const b = tr.smooth[(idx + 1) % nLen];
-  const dx = b[0] - a[0], dy = b[1] - a[1];
-  const lenSq = dx*dx + dy*dy;
-  let t = lenSq > 0 ? ((car.x - a[0]) * dx + (car.y - a[1]) * dy) / lenSq : 0;
-  if (t < 0) t = 0; else if (t > 1) t = 1;
-  const px = a[0] + t * dx, py = a[1] + t * dy;
-  const distToCenterline = Math.hypot(car.x - px, car.y - py);
-  const halfW = tr.widths ? tr.widths[idx] * 0.5 : TRACK_ROAD;
-  state.offTrack = distToCenterline > halfW;
+  let bestDist = Infinity, bestHalfW = TRACK_ROAD;
+  for (let off = -2; off <= 2; off++) {
+    const i = ((state.segIndex + off) % nLen + nLen) % nLen;
+    const j = (i + 1) % nLen;
+    const a = tr.smooth[i], b = tr.smooth[j];
+    const dx = b[0] - a[0], dy = b[1] - a[1];
+    const lenSq = dx*dx + dy*dy;
+    let t = lenSq > 0 ? ((car.x - a[0]) * dx + (car.y - a[1]) * dy) / lenSq : 0;
+    if (t < 0) t = 0; else if (t > 1) t = 1;
+    const px = a[0] + t * dx, py = a[1] + t * dy;
+    const d = Math.hypot(car.x - px, car.y - py);
+    if (d < bestDist) {
+      bestDist = d;
+      bestHalfW = tr.widths ? tr.widths[i] * 0.5 : TRACK_ROAD;
+    }
+  }
+  // Margen extra (~1.5m) para no marcar off-track al pisar el kerb
+  state.offTrack = bestDist > bestHalfW + 1.5;
 
   // ---- Detección de vuelta ----
   const n = tr.smooth.length;
@@ -1234,9 +1238,8 @@ function render(now) {
   drawSkidMarks(cam);
   drawStartLine(tr, cam);
 
-  // Fantasma (debajo del coche jugador)
-  // Fantasma solo aparece desde la 2ª vuelta en adelante
-  if (state.ghostSamples && state.mode === 'tt' && state.lapCount >= 2) {
+  // Fantasma de la mejor vuelta — siempre visible si existe (modo contrarreloj)
+  if (state.ghostSamples && state.mode === 'tt') {
     drawGhost(now, cam);
   }
 

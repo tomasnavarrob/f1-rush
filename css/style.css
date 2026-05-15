@@ -243,6 +243,66 @@ html, body, #app {
   .hint-mobile { display: block; }
 }
 
+/* =========== CONTROLES TÁCTILES =========== */
+.touch-controls {
+  display: none;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 30;
+}
+.touch-side {
+  position: absolute;
+  bottom: 20px;
+  display: flex;
+  flex-direction: row;
+  gap: 14px;
+  pointer-events: none;
+}
+.touch-side.touch-left  { left: 20px; }
+.touch-side.touch-right { right: 20px; flex-direction: row-reverse; }
+.touch-btn {
+  pointer-events: auto;
+  width: 86px;
+  height: 86px;
+  border-radius: 50%;
+  background: rgba(20, 24, 32, 0.55);
+  border: 2px solid rgba(255,255,255,0.25);
+  color: #fff;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+  transition: transform 60ms ease, background 60ms ease;
+}
+.touch-btn.touch-steer { font-size: 30px; }
+.touch-btn.touch-gas    { background: rgba(76, 175, 80, 0.55); border-color: #4CAF50; font-size: 16px; }
+.touch-btn.touch-brake  { background: rgba(220, 60, 60, 0.55); border-color: #dc3c3c; font-size: 14px; }
+.touch-btn.active {
+  transform: scale(0.92);
+  background: rgba(255,255,255,0.35);
+}
+.touch-btn.touch-gas.active   { background: rgba(76, 175, 80, 0.95); }
+.touch-btn.touch-brake.active { background: rgba(220, 60, 60, 0.95); }
+@media (hover: none) and (pointer: coarse) {
+  .touch-controls { display: block; }
+  /* Subir HUD inferior para liberar zona de los controles táctiles */
+  .sectors-panel { bottom: 130px; gap: 6px; }
+  .sector { min-width: 70px; padding: 6px 10px; }
+  .minimap-wrap { bottom: 130px; right: 12px; }
+  #minimap { width: 130px !important; height: 96px !important; }
+  .back-btn { top: 12px; left: 12px; bottom: auto; }
+  .touch-side { bottom: 24px; }
+  .touch-side.touch-left  { left: 12px; }
+  .touch-side.touch-right { right: 12px; }
+  .touch-btn { width: 74px; height: 74px; }
+}
+
 /* =========== JUEGO =========== */
 #game {
   background: #050608;
