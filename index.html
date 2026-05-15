@@ -28,8 +28,20 @@
           </div>
 
           <div class="toolbar-group">
+            <button id="statsBtn" class="pill-btn ghost">🏆 Stats</button>
             <button id="musicBtn" class="pill-btn ghost">♪ Música</button>
           </div>
+        </div>
+
+        <!-- Panel de Stats / Badges / Leaderboards -->
+        <div class="stats-panel hidden" id="statsPanel">
+          <div class="stats-tabs">
+            <button class="stats-tab active" data-tab="stats">Estadísticas</button>
+            <button class="stats-tab" data-tab="badges">Logros</button>
+            <button class="stats-tab" data-tab="leaderboard">Mejores tiempos</button>
+            <button class="stats-close" id="statsCloseBtn" aria-label="Cerrar">✕</button>
+          </div>
+          <div class="stats-body" id="statsBody"></div>
         </div>
 
         <div class="track-grid" id="trackGrid"></div>

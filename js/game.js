@@ -92,6 +92,9 @@ const music = new MenuMusic();
 const STORAGE_KEY    = 'f1rush.bestLaps.v1';
 const SECTOR_KEY     = 'f1rush.bestSectors.v1';
 const GHOST_KEY      = 'f1rush.ghosts.v1';
+const STATS_KEY      = 'f1rush.stats.v1';
+const BADGES_KEY     = 'f1rush.badges.v1';
+const LEADERBOARD_KEY = 'f1rush.leaderboard.v1';
 const LIVERY_KEY     = 'f1rush.livery';
 const MODE_KEY       = 'f1rush.mode';
 const MUSIC_KEY      = 'f1rush.musicOn';
@@ -135,6 +138,106 @@ function saveGhost(trackId, samples) {
   const all = loadJSON(GHOST_KEY, {});
   all[trackId] = samples;
   saveJSON(GHOST_KEY, all);
+}
+
+// ============================================================
+//  STATS / BADGES / LEADERBOARD
+// ============================================================
+const DEFAULT_STATS = {
+  totalLaps: 0,
+  cleanLaps: 0,
+  invalidLaps: 0,
+  totalRaces: 0,
+  wins: 0,
+  podiums: 0,
+  totalMeters: 0,
+  totalDriveSec: 0,
+  maxSpeedKmh: 0,
+  uniqueTracks: [],
+};
+function loadStats() {
+  const s = loadJSON(STATS_KEY, {});
+  return { ...DEFAULT_STATS, ...s, uniqueTracks: s.uniqueTracks || [] };
+}
+function saveStats(s) { saveJSON(STATS_KEY, s); }
+
+// Badges definitions: id, label, descripción y check(stats, ctx)
+const BADGES = [
+  { id: 'first_lap',    label: 'Primera vuelta',     desc: 'Completar tu primera vuelta válida' },
+  { id: 'clean_5',      label: 'Limpieza',           desc: 'Encadená 5 vueltas limpias' },
+  { id: 'veteran_100',  label: 'Veterano',           desc: '100 vueltas totales' },
+  { id: 'first_win',    label: 'Primera victoria',   desc: 'Ganar una carrera' },
+  { id: 'podium',       label: 'Podio',              desc: 'Terminar en el top 3' },
+  { id: 'velocista',    label: 'Velocista',          desc: 'Superar 320 km/h' },
+  { id: 'globetrotter', label: 'Globetrotter',       desc: 'Correr en las 24 pistas' },
+  { id: 'monaco_master',label: 'Monaco Master',      desc: 'Bajar 1:15 en Mónaco' },
+  { id: 'spa_master',   label: 'Spa Master',         desc: 'Bajar 1:50 en Spa' },
+  { id: 'monza_master', label: 'Monza Master',       desc: 'Bajar 1:25 en Monza' },
+];
+function loadBadges() { return loadJSON(BADGES_KEY, {}); }
+function awardBadge(id) {
+  const all = loadBadges();
+  if (all[id]) return false;
+  all[id] = Date.now();
+  saveJSON(BADGES_KEY, all);
+  const b = BADGES.find(x => x.id === id);
+  if (b) showToast('🏅 ' + b.label, 'purple');
+  return true;
+}
+
+// Leaderboard: top 5 vueltas válidas por pista, con fecha
+function loadLeaderboard() { return loadJSON(LEADERBOARD_KEY, {}); }
+function pushLeaderboardEntry(trackId, lapMs) {
+  const all = loadLeaderboard();
+  const list = all[trackId] || [];
+  list.push({ ms: lapMs, t: Date.now() });
+  list.sort((a, b) => a.ms - b.ms);
+  all[trackId] = list.slice(0, 5);
+  saveJSON(LEADERBOARD_KEY, all);
+}
+
+// Hook después de completar una vuelta
+function statsOnLapComplete(lapMs, trackId, invalid, lapMeters) {
+  const s = loadStats();
+  s.totalLaps++;
+  if (invalid) {
+    s.invalidLaps++;
+    s.cleanStreak = 0;
+  } else {
+    s.cleanLaps++;
+    s.cleanStreak = (s.cleanStreak || 0) + 1;
+    pushLeaderboardEntry(trackId, lapMs);
+    if (!s.uniqueTracks.includes(trackId)) s.uniqueTracks.push(trackId);
+  }
+  s.totalMeters += lapMeters || 0;
+  s.totalDriveSec += lapMs / 1000;
+  saveStats(s);
+  // Badges
+  if (!invalid) awardBadge('first_lap');
+  if ((s.cleanStreak || 0) >= 5) awardBadge('clean_5');
+  if (s.totalLaps >= 100) awardBadge('veteran_100');
+  if (s.uniqueTracks.length >= 24) awardBadge('globetrotter');
+  if (!invalid) {
+    if (trackId === 'monaco' && lapMs < 75000) awardBadge('monaco_master');
+    if (trackId === 'spa' && lapMs < 110000) awardBadge('spa_master');
+    if (trackId === 'monza' && lapMs < 85000) awardBadge('monza_master');
+  }
+}
+
+function statsOnSpeedTick(kmh) {
+  if (kmh < 320) return;
+  const s = loadStats();
+  if (kmh > s.maxSpeedKmh) s.maxSpeedKmh = kmh;
+  saveStats(s);
+  awardBadge('velocista');
+}
+
+function statsOnRaceFinish(position, totalRacers) {
+  const s = loadStats();
+  s.totalRaces++;
+  if (position === 1) { s.wins++; awardBadge('first_win'); }
+  if (position <= 3) { s.podiums++; awardBadge('podium'); }
+  saveStats(s);
 }
 
 // ============================================================
@@ -1171,6 +1274,11 @@ function onLapComplete(lapMs, now) {
   state.sectorTimes[2] = (now - state.lapStart) - state.sectorStarts[2];
   flashSector(2, state.sectorTimes[2], state.bestSectorTimes[2]);
 
+  // Stats + leaderboard + badges
+  const lapMeters = tr.total;
+  const trackIdForStats = tr.def.id;
+  statsOnLapComplete(lapMs, trackIdForStats, state.lapInvalid, lapMeters);
+
   // Mejor vuelta (sólo si la vuelta es válida — track limits respetados)
   const trackId = tr.def.id;
   if (state.lapInvalid) {
@@ -1236,6 +1344,10 @@ function finishRace(now) {
   standings.sort((a, b) => b.arc - a.arc);
   state.raceResults = standings;
 
+  // Stats de carrera
+  const playerPos = standings.findIndex(s => s.isPlayer) + 1;
+  statsOnRaceFinish(playerPos, standings.length);
+
   // Mostrar overlay
   const overlay = document.getElementById('finishOverlay');
   const list = overlay.querySelector('.results-list');
@@ -1297,6 +1409,7 @@ function updateHUD(now) {
   }
   const kmh = Math.round(state.car.speed * 3.6);
   document.getElementById('speed').textContent = kmh;
+  statsOnSpeedTick(kmh);
   // Marcha actual: 'N' parado, 1..8 en movimiento
   const gearEl = document.getElementById('gearIndicator');
   if (gearEl) {
@@ -2029,6 +2142,80 @@ document.getElementById('musicBtn').addEventListener('click', () => {
   music.toggle();
   saveJSON(MUSIC_KEY, music.isOn());
   updateMusicButton();
+});
+
+// ============================================================
+//  STATS PANEL UI
+// ============================================================
+function fmtDuration(sec) {
+  if (sec < 60) return Math.round(sec) + 's';
+  if (sec < 3600) return Math.round(sec/60) + 'm';
+  return (sec/3600).toFixed(1) + 'h';
+}
+function fmtDate(ts) {
+  const d = new Date(ts);
+  return d.toLocaleDateString();
+}
+function renderStatsTab() {
+  const s = loadStats();
+  const km = (s.totalMeters / 1000).toFixed(1);
+  return `<div class="stat-grid">
+    <div class="stat-card"><div class="stat-label">Vueltas totales</div><div class="stat-value">${s.totalLaps}</div></div>
+    <div class="stat-card"><div class="stat-label">Vueltas limpias</div><div class="stat-value">${s.cleanLaps}</div></div>
+    <div class="stat-card"><div class="stat-label">Vueltas eliminadas</div><div class="stat-value">${s.invalidLaps}</div></div>
+    <div class="stat-card"><div class="stat-label">Carreras</div><div class="stat-value">${s.totalRaces}</div></div>
+    <div class="stat-card"><div class="stat-label">Victorias</div><div class="stat-value">${s.wins}</div></div>
+    <div class="stat-card"><div class="stat-label">Podios</div><div class="stat-value">${s.podiums}</div></div>
+    <div class="stat-card"><div class="stat-label">Distancia</div><div class="stat-value">${km} km</div></div>
+    <div class="stat-card"><div class="stat-label">Tiempo en pista</div><div class="stat-value">${fmtDuration(s.totalDriveSec)}</div></div>
+    <div class="stat-card"><div class="stat-label">Velocidad máxima</div><div class="stat-value">${s.maxSpeedKmh} km/h</div></div>
+    <div class="stat-card"><div class="stat-label">Pistas únicas</div><div class="stat-value">${s.uniqueTracks.length}/24</div></div>
+  </div>`;
+}
+function renderBadgesTab() {
+  const owned = loadBadges();
+  return '<div class="badge-grid">' + BADGES.map(b => `
+    <div class="badge ${owned[b.id] ? 'unlocked' : ''}">
+      <div class="badge-label">${owned[b.id] ? '🏅' : '🔒'} ${b.label}</div>
+      <div class="badge-desc">${b.desc}</div>
+    </div>`).join('') + '</div>';
+}
+function renderLeaderboardTab() {
+  const lb = loadLeaderboard();
+  const trackIds = Object.keys(lb);
+  if (trackIds.length === 0) return '<p style="color:var(--fg-dim);text-align:center;padding:24px">Todavía no hay tiempos registrados. ¡Andá a correr!</p>';
+  return trackIds.map(id => {
+    const track = TRACKS.find(t => t.id === id);
+    const name = track ? track.name : id;
+    const rows = lb[id].map((e, i) => `
+      <div class="lb-row">
+        <span class="lb-pos">${i+1}.</span>
+        <span class="lb-ms">${fmtTime(e.ms)}</span>
+        <span class="lb-date">${fmtDate(e.t)}</span>
+      </div>`).join('');
+    return `<div class="lb-track"><h4>${name}</h4>${rows}</div>`;
+  }).join('');
+}
+function renderStatsPanel(tab) {
+  const body = document.getElementById('statsBody');
+  if (!body) return;
+  if (tab === 'badges') body.innerHTML = renderBadgesTab();
+  else if (tab === 'leaderboard') body.innerHTML = renderLeaderboardTab();
+  else body.innerHTML = renderStatsTab();
+  document.querySelectorAll('.stats-tab').forEach(el => {
+    el.classList.toggle('active', el.dataset.tab === tab);
+  });
+}
+document.getElementById('statsBtn').addEventListener('click', () => {
+  const panel = document.getElementById('statsPanel');
+  const isHidden = panel.classList.toggle('hidden');
+  if (!isHidden) renderStatsPanel('stats');
+});
+document.getElementById('statsCloseBtn').addEventListener('click', () => {
+  document.getElementById('statsPanel').classList.add('hidden');
+});
+document.querySelectorAll('.stats-tab').forEach(tab => {
+  tab.addEventListener('click', () => renderStatsPanel(tab.dataset.tab));
 });
 
 document.getElementById('finishContinue').addEventListener('click', () => {

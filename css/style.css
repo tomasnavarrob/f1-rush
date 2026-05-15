@@ -245,6 +245,100 @@ html, body, #app {
   .pause-btn-mobile { display: flex; }
 }
 
+/* =========== STATS PANEL =========== */
+.stats-panel {
+  background: rgba(15, 18, 24, 0.96);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 16px;
+  margin: 0 auto 24px auto;
+  max-width: 720px;
+  width: 100%;
+}
+.stats-tabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  padding-bottom: 10px;
+  margin-bottom: 14px;
+  align-items: center;
+}
+.stats-tab {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--fg-dim);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.stats-tab.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.stats-close {
+  margin-left: auto;
+  background: transparent;
+  border: none;
+  color: var(--fg-dim);
+  font-size: 18px;
+  cursor: pointer;
+}
+.stats-body { color: var(--fg); font-size: 13px; }
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+.stat-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.stat-card .stat-label { font-size: 10px; color: var(--fg-dim); letter-spacing: 0.1em; text-transform: uppercase; }
+.stat-card .stat-value { font-family: "SF Mono", "Menlo", monospace; font-size: 22px; font-weight: 800; margin-top: 4px; }
+.badge-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+.badge {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  opacity: 0.45;
+}
+.badge.unlocked { opacity: 1; border-color: rgba(255, 212, 0, 0.4); background: rgba(255, 212, 0, 0.08); }
+.badge .badge-label { font-weight: 800; font-size: 13px; }
+.badge .badge-desc  { font-size: 11px; color: var(--fg-dim); }
+.lb-track {
+  margin-bottom: 14px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.lb-track h4 { font-size: 13px; margin-bottom: 6px; }
+.lb-row {
+  display: flex;
+  justify-content: space-between;
+  font-family: "SF Mono", "Menlo", monospace;
+  font-size: 12px;
+  padding: 3px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.lb-row:last-child { border-bottom: none; }
+.lb-row .lb-pos { color: var(--fg-dim); width: 24px; }
+.lb-row .lb-ms  { font-weight: 800; }
+.lb-row .lb-date { color: var(--fg-dim); font-size: 11px; }
+
 /* =========== TRACK LIMITS =========== */
 .track-limits {
   position: absolute;
