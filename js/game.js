@@ -1235,7 +1235,8 @@ function render(now) {
   drawStartLine(tr, cam);
 
   // Fantasma (debajo del coche jugador)
-  if (state.ghostSamples && state.mode === 'tt') {
+  // Fantasma solo aparece desde la 2ª vuelta en adelante
+  if (state.ghostSamples && state.mode === 'tt' && state.lapCount >= 2) {
     drawGhost(now, cam);
   }
 
@@ -1616,9 +1617,9 @@ function drawCar(wx, wy, angle, cam, livery, isGhost) {
   const L = 2.75;  // semilongitud
   const W = 0.85;  // semianchura "ancha" del chasis (sidepods)
 
-  const wheelW   = 0.35;   // ancho rueda (m)
-  const wheelL_f = 0.40;   // diámetro rueda delantera
-  const wheelL_r = 0.42;   // rueda trasera (un poco más grande)
+  const wheelW   = 0.62;   // ancho rueda (m) — bien gruesas
+  const wheelL_f = 0.75;   // diámetro rueda delantera
+  const wheelL_r = 0.85;   // rueda trasera (la más grande)
   const wingT    = 0.12;   // grosor alerón
 
   // ---- Difusor (rejilla oscura trasera, debajo de todo) ----
@@ -1635,37 +1636,38 @@ function drawCar(wx, wy, angle, cam, livery, isGhost) {
   ctx.fillRect(-L * 0.95, -W * 1.30, wingT * 2.2, W * 0.30);    // endplate izq
   ctx.fillRect(-L * 0.95,  W * 1.00, wingT * 2.2, W * 0.30);    // endplate der
 
-  // ---- Ruedas traseras ----
+  // ---- Ruedas traseras (anchas) ----
   ctx.fillStyle = '#0a0a0a';
-  ctx.fillRect(-L * 0.78,  W * 0.85,                    wheelL_r, wheelW);   // RR
-  ctx.fillRect(-L * 0.78, -W * 0.85 - wheelW,           wheelL_r, wheelW);   // RL
-  // Llantas (un punto plateado al centro)
+  ctx.fillRect(-L * 0.75,  W * 1.00,                    wheelL_r, wheelW);   // RR
+  ctx.fillRect(-L * 0.75, -W * 1.00 - wheelW,           wheelL_r, wheelW);   // RL
+  // Llantas plateadas centradas
   ctx.fillStyle = '#666';
-  ctx.fillRect(-L * 0.65,  W * 0.85 + wheelW * 0.35, wheelL_r * 0.4, wheelW * 0.3);
-  ctx.fillRect(-L * 0.65, -W * 0.85 - wheelW * 0.65, wheelL_r * 0.4, wheelW * 0.3);
+  ctx.fillRect(-L * 0.55,  W * 1.00 + wheelW * 0.35, wheelL_r * 0.35, wheelW * 0.3);
+  ctx.fillRect(-L * 0.55, -W * 1.00 - wheelW * 0.65, wheelL_r * 0.35, wheelW * 0.3);
 
-  // ---- Carrocería: forma orgánica con curva natural F1 ----
-  // Va desde la cola (rear, narrow) → sidepods (widest) → bargeboard → nose
+  // ---- Carrocería con silueta F1 real ----
+  // 1) Engine cover + cola (parte trasera): se afina de adelante hacia atrás
   ctx.fillStyle = livery.body;
   ctx.beginPath();
-  // Lado derecho (de cola a punta)
-  ctx.moveTo(-L * 0.88,  W * 0.50);       // cola estrecha
-  ctx.lineTo(-L * 0.60,  W * 0.70);       // engine cover
-  ctx.lineTo(-L * 0.20,  W * 1.05);       // sidepod más ancho
-  ctx.lineTo( L * 0.10,  W * 1.05);       // sidepod plano arriba
-  ctx.lineTo( L * 0.35,  W * 0.85);       // bargeboard
-  ctx.lineTo( L * 0.50,  W * 0.55);       // entrada al morro
-  ctx.lineTo( L * 0.85,  W * 0.18);       // morro estrecho
-  ctx.lineTo( L * 0.99,  W * 0.10);       // punta
+  ctx.moveTo(-L * 0.92,  W * 0.30);       // cola muy estrecha
+  ctx.lineTo(-L * 0.55,  W * 0.55);       // engine cover
+  ctx.lineTo(-L * 0.20,  W * 0.95);       // sidepod más ancho aquí (detrás del piloto)
+  ctx.lineTo( L * 0.05,  W * 1.00);       // sidepod widest (al lado del cockpit)
+  ctx.lineTo( L * 0.18,  W * 0.75);       // bargeboard inicio
+  ctx.lineTo( L * 0.28,  W * 0.45);       // pinch entre sidepod y nose
+  ctx.lineTo( L * 0.32,  W * 0.20);       // arranque del nose
+  ctx.lineTo( L * 0.97,  W * 0.13);       // nose tube (largo, casi paralelo)
+  ctx.lineTo( L * 1.00,  W * 0.08);       // punta del morro
   // Espejo a la izquierda
-  ctx.lineTo( L * 0.99, -W * 0.10);
-  ctx.lineTo( L * 0.85, -W * 0.18);
-  ctx.lineTo( L * 0.50, -W * 0.55);
-  ctx.lineTo( L * 0.35, -W * 0.85);
-  ctx.lineTo( L * 0.10, -W * 1.05);
-  ctx.lineTo(-L * 0.20, -W * 1.05);
-  ctx.lineTo(-L * 0.60, -W * 0.70);
-  ctx.lineTo(-L * 0.88, -W * 0.50);
+  ctx.lineTo( L * 1.00, -W * 0.08);
+  ctx.lineTo( L * 0.97, -W * 0.13);
+  ctx.lineTo( L * 0.32, -W * 0.20);
+  ctx.lineTo( L * 0.28, -W * 0.45);
+  ctx.lineTo( L * 0.18, -W * 0.75);
+  ctx.lineTo( L * 0.05, -W * 1.00);
+  ctx.lineTo(-L * 0.20, -W * 0.95);
+  ctx.lineTo(-L * 0.55, -W * 0.55);
+  ctx.lineTo(-L * 0.92, -W * 0.30);
   ctx.closePath();
   ctx.fill();
 
@@ -1712,13 +1714,13 @@ function drawCar(wx, wy, angle, cam, livery, isGhost) {
   ctx.fillStyle = livery.accent;
   ctx.fillRect(-L * 0.13, -W * 0.06, L * 0.04, W * 0.12);
 
-  // ---- Ruedas delanteras (afuera del chasis) ----
+  // ---- Ruedas delanteras (afuera del chasis, separadas del cuerpo) ----
   ctx.fillStyle = '#0a0a0a';
-  ctx.fillRect(L * 0.42,  W * 1.0,                  wheelL_f, wheelW);   // FR
-  ctx.fillRect(L * 0.42, -W * 1.0 - wheelW,         wheelL_f, wheelW);   // FL
+  ctx.fillRect(L * 0.45,  W * 1.10,                  wheelL_f, wheelW);   // FR
+  ctx.fillRect(L * 0.45, -W * 1.10 - wheelW,         wheelL_f, wheelW);   // FL
   ctx.fillStyle = '#666';
-  ctx.fillRect(L * 0.50,  W * 1.0 + wheelW * 0.35, wheelL_f * 0.4, wheelW * 0.3);
-  ctx.fillRect(L * 0.50, -W * 1.0 - wheelW * 0.65, wheelL_f * 0.4, wheelW * 0.3);
+  ctx.fillRect(L * 0.55,  W * 1.10 + wheelW * 0.35, wheelL_f * 0.35, wheelW * 0.3);
+  ctx.fillRect(L * 0.55, -W * 1.10 - wheelW * 0.65, wheelL_f * 0.35, wheelW * 0.3);
 
   // ---- Alerón delantero (ancho, multi-elemento) ----
   // Plano principal
