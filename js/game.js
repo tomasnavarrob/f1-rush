@@ -69,6 +69,10 @@ const state = {
   recordSamples: [],               // muestras de la vuelta actual
   ghostSamples: null,              // muestras de la mejor vuelta
   lastSampleAt: 0,
+
+  // Semáforo de partida F1
+  startLights: 0,                  // 0..5 luces rojas encendidas; -1 = ya largó
+  startLightsStartedAt: 0,         // performance.now() cuando arrancó la secuencia
 };
 
 const engine = new EngineSound();
@@ -366,6 +370,13 @@ function startRace(trackDef) {
   state.ghostSamples = loadGhost(trackDef.id);
   state.lastSampleAt = state.lapStart;
 
+  // Semáforo F1: 5 luces encendiéndose 1 por segundo, luego apagón aleatorio
+  state.startLights = 0;
+  state.startLightsStartedAt = performance.now();
+  state._goAt = null;
+  state._goShownAt = null;
+  state.inputs.left = state.inputs.right = state.inputs.accelerate = state.inputs.brake = false;
+
   // IA (solo en modo carrera)
   state.ai = [];
   if (state.mode === 'race') {
@@ -494,6 +505,11 @@ function restartLap() {
   state.car.speed = 0;
   state.lapStart = performance.now();
   state.lapCount = 1;
+  // Re-activar semáforo de partida
+  state.startLights = 0;
+  state.startLightsStartedAt = performance.now();
+  state._goAt = null;
+  state._goShownAt = null;
   state.segIndex = 0;
   state.segIndexPrev = 0;
   state.recordSamples = [];
@@ -905,6 +921,36 @@ function update(dt, now) {
   const car = state.car;
   const tr = state.track;
 
+  // ---- Semáforo de partida ----
+  // 5 luces a 1/s, luego apagón aleatorio entre 0.4 y 1.6s. Hasta entonces
+  // bloqueamos los inputs y reseteamos lapStart para que cuente desde el GO.
+  if (state.startLights >= 0) {
+    const elapsed = now - state.startLightsStartedAt;
+    const lightInterval = 1000;
+    const lightsOnDuration = 5 * lightInterval;
+    if (elapsed < lightsOnDuration) {
+      state.startLights = Math.min(5, Math.floor(elapsed / lightInterval) + 1);
+    } else {
+      if (state._goAt == null) state._goAt = state.startLightsStartedAt + lightsOnDuration + 400 + Math.random() * 1200;
+      if (now >= state._goAt) {
+        state.startLights = -1;
+        state._goAt = null;
+      }
+    }
+    if (state.startLights >= 0) {
+      car.speed = 0;
+      state.inputs.accelerate = false;
+      state.inputs.brake = false;
+      state.lapStart = now;
+      state.lastSampleAt = now;
+      updateHUD(now);
+      return;
+    }
+    // GO!
+    state.lapStart = now;
+    state.lastSampleAt = now;
+  }
+
   // ---- Off-track + segmento ----
   const near = nearestSegment([car.x, car.y], tr.smooth, state.segIndex);
   state.segIndexPrev = state.segIndex;
@@ -1134,7 +1180,26 @@ function finishRace(now) {
 }
 
 function updateHUD(now) {
-  document.getElementById('currentLap').textContent = fmtTime(now - state.lapStart);
+  // Semáforo: mostrar mientras esté activo, ocultar al GO
+  const lightsEl = document.getElementById('startLights');
+  if (state.startLights >= 0) {
+    lightsEl.classList.remove('hidden');
+    const lights = lightsEl.querySelectorAll('.light');
+    lights.forEach((el, i) => el.classList.toggle('on', i < state.startLights));
+    document.getElementById('startLightsGo').classList.remove('visible');
+  } else if (state._goShownAt == null) {
+    // Mostrar "¡VAMOS!" brevemente
+    state._goShownAt = now;
+    const lights = lightsEl.querySelectorAll('.light');
+    lights.forEach(el => el.classList.remove('on'));
+    document.getElementById('startLightsGo').classList.add('visible');
+  } else if (now - state._goShownAt > 700) {
+    lightsEl.classList.add('hidden');
+  }
+
+  // Mientras corren las luces, mostramos el reloj en 0
+  const tShown = state.startLights >= 0 ? 0 : Math.max(0, now - state.lapStart);
+  document.getElementById('currentLap').textContent = fmtTime(tShown);
   const kmh = Math.round(state.car.speed * 3.6);
   document.getElementById('speed').textContent = kmh;
 
