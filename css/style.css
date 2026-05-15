@@ -534,6 +534,31 @@ html, body, #app {
   color: var(--fg-dim);
   letter-spacing: 0.15em;
 }
+.gear-indicator {
+  position: absolute;
+  right: -52px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  background: rgba(0,0,0,0.6);
+  border: 2px solid rgba(255,255,255,0.18);
+  font-family: "SF Mono", "Menlo", monospace;
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--accent-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  transition: transform 80ms ease, color 80ms ease;
+}
+.gear-indicator.flash {
+  transform: translateY(-50%) scale(1.18);
+  color: #fff;
+}
+.speedo { position: relative; }
 
 /* ----- Panel de sectores ----- */
 .sectors-panel {

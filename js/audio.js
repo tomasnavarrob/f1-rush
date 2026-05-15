@@ -132,6 +132,75 @@ class EngineSound {
     o.stop(ctx.currentTime + 0.2);
   }
 
+  // Upshift: chasquido seco con un pop de aire (simula el "blip" de F1)
+  upshift(rpmHigh = 0.95) {
+    if (!this.started) return;
+    const ctx = this.ctx;
+    const t = ctx.currentTime;
+    // Click corto agudo
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'square';
+    o.frequency.setValueAtTime(2800, t);
+    o.frequency.exponentialRampToValueAtTime(900, t + 0.05);
+    g.gain.setValueAtTime(0.0, t);
+    g.gain.linearRampToValueAtTime(0.22, t + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(t);
+    o.stop(t + 0.1);
+    // Pequeño "puf" de aire
+    const bufSize = Math.floor(ctx.sampleRate * 0.06);
+    const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) d[i] = (Math.random()*2-1) * (1 - i/bufSize);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    const f = ctx.createBiquadFilter();
+    f.type = 'bandpass';
+    f.frequency.value = 3500;
+    f.Q.value = 0.8;
+    const ng = ctx.createGain();
+    ng.gain.value = 0.18;
+    src.connect(f); f.connect(ng); ng.connect(ctx.destination);
+    src.start(t);
+  }
+
+  // Downshift: rev-match con un blip más grave
+  downshift() {
+    if (!this.started) return;
+    const ctx = this.ctx;
+    const t = ctx.currentTime;
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(380, t);
+    o.frequency.exponentialRampToValueAtTime(220, t + 0.18);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.18, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(t);
+    o.stop(t + 0.2);
+  }
+
+  // Apagar motor: fade-out completo
+  stop() {
+    if (!this.started || !this.ctx) return;
+    const t = this.ctx.currentTime;
+    this.targetRpm = 0;
+    this.rpm = 0;
+    if (this.gain) {
+      this.gain.gain.cancelScheduledValues(t);
+      this.gain.gain.setValueAtTime(this.gain.gain.value, t);
+      this.gain.gain.linearRampToValueAtTime(0, t + 0.5);
+    }
+    if (this.noiseGain) {
+      this.noiseGain.gain.cancelScheduledValues(t);
+      this.noiseGain.gain.linearRampToValueAtTime(0, t + 0.4);
+    }
+  }
+
   // Sonido de derrape / off-track (ruido filtrado breve)
   scrape(intensity = 1) {
     if (!this.started) return;

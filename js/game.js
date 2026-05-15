@@ -75,6 +75,9 @@ const state = {
   lapInvalid: false,
   offTrackPrev: false,
 
+  // Caja de cambios (para sonido de motor con shifts)
+  gear: 1,
+
   // Semáforo de partida F1
   startLights: 0,                  // 0..5 luces rojas encendidas; -1 = ya largó
   startLightsStartedAt: 0,         // performance.now() cuando arrancó la secuencia
@@ -387,6 +390,9 @@ function startRace(trackDef) {
   state.lapInvalid = false;
   state.offTrackPrev = false;
 
+  // Marcha inicial
+  state.gear = 1;
+
   // IA (solo en modo carrera) — 10 oponentes con dos pilotos por equipo
   state.ai = [];
   if (state.mode === 'race') {
@@ -442,7 +448,7 @@ function exitRace() {
   document.getElementById('game').classList.add('hidden');
   document.getElementById('menu').classList.remove('hidden');
   document.getElementById('finishOverlay').classList.add('hidden');
-  engine.setRpm(0);
+  engine.stop();
   music.start();
   renderMenu();
 }
@@ -534,6 +540,7 @@ function restartLap() {
   state.offTrackCount = 0;
   state.lapInvalid = false;
   state.offTrackPrev = false;
+  state.gear = 1;
   state.segIndex = 0;
   state.segIndexPrev = 0;
   state.recordSamples = [];
@@ -1070,7 +1077,22 @@ function update(dt, now) {
   // ---- Chispas y marcas de neumáticos ----
   updateEffects(dt, now);
 
-  engine.setRpm(0.15 + (car.speed / car.maxSpeed) * 0.85);
+  // ---- Caja de cambios: 8 marchas tipo F1 ----
+  // El RPM sube linealmente dentro de cada marcha y "cae" al subir → suena más excitante
+  const GEAR_TOPS = [14, 28, 44, 60, 74, 87, 97, 105]; // m/s en cada redline
+  let g = 0;
+  while (g < GEAR_TOPS.length - 1 && car.speed > GEAR_TOPS[g]) g++;
+  const gMin = g === 0 ? 0 : GEAR_TOPS[g - 1];
+  const gMax = GEAR_TOPS[g];
+  const gFrac = Math.max(0, Math.min(1, (car.speed - gMin) / (gMax - gMin)));
+  const targetGear = g + 1;
+  if (targetGear !== state.gear) {
+    if (targetGear > state.gear) engine.upshift();
+    else engine.downshift();
+    state.gear = targetGear;
+  }
+  // RPM por marcha: 0.25 idle de la marcha → 0.98 redline
+  engine.setRpm(0.25 + gFrac * 0.73);
 
   // ---- Muestreo para fantasma ----
   if (now - state.lastSampleAt >= GHOST_SAMPLE_MS) {
@@ -1225,7 +1247,7 @@ function finishRace(now) {
   });
   overlay.classList.remove('hidden');
   engine.jingle(true);
-  engine.setRpm(0);
+  engine.stop();
 }
 
 function updateHUD(now) {
@@ -1270,6 +1292,16 @@ function updateHUD(now) {
   }
   const kmh = Math.round(state.car.speed * 3.6);
   document.getElementById('speed').textContent = kmh;
+  // Marcha actual: 'N' parado, 1..8 en movimiento
+  const gearEl = document.getElementById('gearIndicator');
+  if (gearEl) {
+    const newG = state.car.speed < 1 ? 'N' : String(state.gear);
+    if (gearEl.textContent !== newG) {
+      gearEl.textContent = newG;
+      gearEl.classList.add('flash');
+      setTimeout(() => gearEl.classList.remove('flash'), 200);
+    }
+  }
 
   // Sectores
   for (let i = 0; i < 3; i++) {
