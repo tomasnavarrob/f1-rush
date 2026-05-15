@@ -1751,8 +1751,12 @@ function drawGhost(now, cam) {
   const t = now - state.lapStart;
   const samples = state.ghostSamples;
   if (!samples || samples.length === 0) return;
-  // Si la vuelta actual es más larga que la del fantasma, no dibujar (ya cruzó)
-  if (t > samples[samples.length - 1].t) return;
+  const last = samples[samples.length - 1];
+  // Si el fantasma ya terminó su vuelta, lo dejamos parado en la línea de meta
+  if (t > last.t) {
+    drawCar(last.x, last.y, last.angle, cam, { body:'#9ec5fe', dark:'#3c5a8a', accent:'#fff' }, true);
+    return;
+  }
 
   // Búsqueda binaria del sample
   let lo = 0, hi = samples.length - 1;
@@ -1879,6 +1883,9 @@ function init() {
   document.addEventListener('click', () => {
     if (state.scene === 'menu' && music.isOn()) music.start();
   }, { once: true });
+
+  // Debug: exponer state para inspección en consola
+  window.__f1__ = state;
 }
 
 init();
