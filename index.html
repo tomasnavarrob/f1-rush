@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>F1 Rush — 2026</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Pantalla de menú principal -->
+    <section id="menu" class="screen">
+      <div class="menu-inner">
+        <h1 class="title">F1 <span class="accent">RUSH</span></h1>
+        <p class="subtitle">24 pistas reales · una sola tecla · contrarreloj y carrera</p>
+
+        <div class="menu-toolbar">
+          <div class="toolbar-group">
+            <span class="toolbar-label">Modo</span>
+            <button id="modeBtn" class="pill-btn">Contrarreloj</button>
+          </div>
+
+          <div class="toolbar-group flex-grow">
+            <span class="toolbar-label">Equipo</span>
+            <div id="liveryPicker" class="livery-picker"></div>
+          </div>
+
+          <div class="toolbar-group">
+            <button id="musicBtn" class="pill-btn ghost">♪ Música</button>
+          </div>
+        </div>
+
+        <div class="track-grid" id="trackGrid"></div>
+
+        <div class="menu-footer">
+          <div class="hint">
+            <strong>← →</strong> girar &nbsp;·&nbsp;
+            <strong>↑ / W / ESPACIO</strong> acelerar &nbsp;·&nbsp;
+            <strong>↓ / S</strong> frenar &nbsp;·&nbsp;
+            <strong>ESC</strong> pausa &nbsp;·&nbsp;
+            <strong>R</strong> reinicia &nbsp;·&nbsp;
+            <strong>T</strong> línea de pilotaje
+          </div>
+          <div class="hint-mobile">📱 Toca y mantén a izquierda o derecha para acelerar y girar · centro abajo = freno</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pantalla de juego -->
+    <section id="game" class="screen hidden">
+      <canvas id="canvas"></canvas>
+
+      <div class="hud">
+        <div class="hud-left">
+          <div class="hud-block">
+            <div class="hud-label">Vuelta actual</div>
+            <div class="hud-value" id="currentLap">0:00.000</div>
+          </div>
+          <div class="hud-block">
+            <div class="hud-label">Mejor</div>
+            <div class="hud-value best" id="bestLap">--:--.---</div>
+          </div>
+          <div class="hud-block hud-pos hidden">
+            <div class="hud-label">Posición</div>
+            <div class="hud-value" id="position">P1 / 4</div>
+          </div>
+        </div>
+
+        <div class="hud-center">
+          <div class="speedo">
+            <div class="speed-value" id="speed">0</div>
+            <div class="speed-unit">km/h</div>
+          </div>
+          <div class="drs-indicator hidden" id="drsIndicator">DRS</div>
+        </div>
+
+        <div class="hud-right">
+          <div class="hud-block">
+            <div class="hud-label">Pista</div>
+            <div class="hud-value sm" id="trackName">--</div>
+          </div>
+          <div class="hud-block">
+            <div class="hud-label">Vuelta</div>
+            <div class="hud-value sm" id="lapCount">1</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel de sectores -->
+      <div class="sectors-panel">
+        <div class="sector" id="sec1">
+          <div class="sec-label">S1</div>
+          <div class="sec-val" id="sec1-val">--.---</div>
+          <div class="sec-delta" id="sec1-delta"></div>
+        </div>
+        <div class="sector" id="sec2">
+          <div class="sec-label">S2</div>
+          <div class="sec-val" id="sec2-val">--.---</div>
+          <div class="sec-delta" id="sec2-delta"></div>
+        </div>
+        <div class="sector" id="sec3">
+          <div class="sec-label">S3</div>
+          <div class="sec-val" id="sec3-val">--.---</div>
+          <div class="sec-delta" id="sec3-delta"></div>
+        </div>
+      </div>
+
+      <div class="minimap-wrap">
+        <canvas id="minimap" width="220" height="160"></canvas>
+      </div>
+
+      <button class="back-btn" id="backBtn">← Pistas</button>
+
+      <div class="overlay hidden" id="pauseOverlay">
+        <div class="overlay-card">
+          <h2>Pausa</h2>
+          <button id="resumeBtn">Continuar</button>
+          <button id="restartBtn">Reiniciar vuelta</button>
+          <button id="exitBtn">Volver al menú</button>
+        </div>
+      </div>
+
+      <div class="overlay hidden" id="finishOverlay">
+        <div class="overlay-card big">
+          <div class="finish-flag">🏁</div>
+          <h2>¡Carrera terminada!</h2>
+          <div class="results-list"></div>
+          <button id="finishContinue">Continuar</button>
+        </div>
+      </div>
+
+      <div class="toast hidden" id="toast"></div>
+    </section>
+  </div>
+
+  <script src="js/tracks.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
