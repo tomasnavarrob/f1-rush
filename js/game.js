@@ -70,6 +70,11 @@ const state = {
   ghostSamples: null,              // muestras de la mejor vuelta
   lastSampleAt: 0,
 
+  // Track limits — si se sale más de 5 veces, vuelta inválida
+  offTrackCount: 0,
+  lapInvalid: false,
+  offTrackPrev: false,
+
   // Semáforo de partida F1
   startLights: 0,                  // 0..5 luces rojas encendidas; -1 = ya largó
   startLightsStartedAt: 0,         // performance.now() cuando arrancó la secuencia
@@ -377,6 +382,11 @@ function startRace(trackDef) {
   state._goShownAt = null;
   state.inputs.left = state.inputs.right = state.inputs.accelerate = state.inputs.brake = false;
 
+  // Track limits
+  state.offTrackCount = 0;
+  state.lapInvalid = false;
+  state.offTrackPrev = false;
+
   // IA (solo en modo carrera)
   state.ai = [];
   if (state.mode === 'race') {
@@ -512,6 +522,10 @@ function restartLap() {
   state.startLightsStartedAt = performance.now();
   state._goAt = null;
   state._goShownAt = null;
+  // Track limits
+  state.offTrackCount = 0;
+  state.lapInvalid = false;
+  state.offTrackPrev = false;
   state.segIndex = 0;
   state.segIndexPrev = 0;
   state.recordSamples = [];
@@ -985,6 +999,15 @@ function update(dt, now) {
   } else {
     if (bestDist > enterOff) state.offTrack = true;
   }
+  // Contar cada vez que se entra a off-track. Más de 5 → vuelta inválida (deleted).
+  if (state.offTrack && !state.offTrackPrev) {
+    state.offTrackCount++;
+    if (state.offTrackCount > 5 && !state.lapInvalid) {
+      state.lapInvalid = true;
+      showToast('VUELTA ELIMINADA · límites de pista', 'red');
+    }
+  }
+  state.offTrackPrev = state.offTrack;
 
   // ---- Detección de vuelta ----
   const n = tr.smooth.length;
@@ -1113,26 +1136,33 @@ function onLapComplete(lapMs, now) {
   state.sectorTimes[2] = (now - state.lapStart) - state.sectorStarts[2];
   flashSector(2, state.sectorTimes[2], state.bestSectorTimes[2]);
 
-  // Mejor vuelta
+  // Mejor vuelta (sólo si la vuelta es válida — track limits respetados)
   const trackId = tr.def.id;
-  const improvedLap = saveBest(trackId, lapMs);
-  if (improvedLap) {
-    state.bestLap = lapMs;
-    document.getElementById('bestLap').textContent = fmtTime(lapMs);
-    const bm2 = document.getElementById('bestLapMobile');
-    if (bm2) bm2.textContent = 'MEJOR ' + fmtTime(lapMs);
-    showToast('NUEVO RÉCORD PERSONAL · ' + fmtTime(lapMs), 'purple');
-    engine.jingle(true);
-    // Guardar fantasma
-    state.ghostSamples = state.recordSamples.slice();
-    saveGhost(trackId, state.ghostSamples);
-  } else {
-    showToast('Vuelta ' + fmtTime(lapMs), 'green');
+  if (state.lapInvalid) {
+    showToast('VUELTA ELIMINADA · ' + fmtTime(lapMs), 'red');
     engine.jingle(false);
+  } else {
+    const improvedLap = saveBest(trackId, lapMs);
+    if (improvedLap) {
+      state.bestLap = lapMs;
+      document.getElementById('bestLap').textContent = fmtTime(lapMs);
+      const bm2 = document.getElementById('bestLapMobile');
+      if (bm2) bm2.textContent = 'MEJOR ' + fmtTime(lapMs);
+      showToast('NUEVO RÉCORD PERSONAL · ' + fmtTime(lapMs), 'purple');
+      engine.jingle(true);
+      // Guardar fantasma
+      state.ghostSamples = state.recordSamples.slice();
+      saveGhost(trackId, state.ghostSamples);
+    } else {
+      showToast('Vuelta ' + fmtTime(lapMs), 'green');
+      engine.jingle(false);
+    }
+    // Mejores sectores sólo cuentan en vueltas válidas
+    state.bestSectorTimes = saveBestSectors(trackId, state.sectorTimes);
   }
-
-  // Mejores sectores
-  state.bestSectorTimes = saveBestSectors(trackId, state.sectorTimes);
+  // Reset de track limits para la próxima vuelta
+  state.offTrackCount = 0;
+  state.lapInvalid = false;
 
   // Resetear vuelta
   state.recordSamples = [];
@@ -1211,9 +1241,25 @@ function updateHUD(now) {
   // Mientras corren las luces, mostramos el reloj en 0
   const tShown = state.startLights >= 0 ? 0 : Math.max(0, now - state.lapStart);
   const lapStr = fmtTime(tShown);
-  document.getElementById('currentLap').textContent = lapStr;
+  const lapEl = document.getElementById('currentLap');
+  lapEl.textContent = lapStr;
+  lapEl.classList.toggle('invalid', state.lapInvalid);
   const mEl = document.getElementById('currentLapMobile');
-  if (mEl) mEl.textContent = lapStr;
+  if (mEl) {
+    mEl.textContent = lapStr;
+    mEl.classList.toggle('invalid', state.lapInvalid);
+  }
+  // Mostrar contador de límites de pista
+  const tlEl = document.getElementById('trackLimits');
+  if (tlEl) {
+    if (state.offTrackCount > 0 || state.lapInvalid) {
+      tlEl.textContent = state.lapInvalid ? 'TL ELIMINADA' : `TL ${state.offTrackCount}/5`;
+      tlEl.classList.remove('hidden');
+      tlEl.classList.toggle('invalid', state.lapInvalid);
+    } else {
+      tlEl.classList.add('hidden');
+    }
+  }
   const kmh = Math.round(state.car.speed * 3.6);
   document.getElementById('speed').textContent = kmh;
 

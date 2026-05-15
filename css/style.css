@@ -243,6 +243,36 @@ html, body, #app {
   .hint-mobile { display: block; }
 }
 
+/* =========== TRACK LIMITS =========== */
+.track-limits {
+  position: absolute;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 180, 0, 0.18);
+  border: 1px solid rgba(255, 180, 0, 0.55);
+  color: #ffc94d;
+  font-family: "SF Mono", "Menlo", monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 5px 12px;
+  border-radius: 8px;
+  z-index: 6;
+  pointer-events: none;
+}
+.track-limits.invalid {
+  background: rgba(220, 60, 60, 0.25);
+  border-color: rgba(220, 60, 60, 0.75);
+  color: #ff6262;
+}
+.hud-value.invalid,
+.lap-info #currentLapMobile.invalid {
+  color: #ff6262;
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+}
+
 /* =========== SEMÁFORO F1 =========== */
 .start-lights {
   position: absolute;
