@@ -341,9 +341,30 @@ html, body, #app {
   /* Subir HUD inferior para liberar zona de los controles táctiles */
   .sectors-panel { bottom: 130px; gap: 6px; }
   .sector { min-width: 70px; padding: 6px 10px; }
-  .minimap-wrap { bottom: 130px; right: 12px; }
-  #minimap { width: 130px !important; height: 96px !important; }
-  .back-btn { top: 12px; left: 12px; bottom: auto; }
+  /* Minimapa arriba a la izquierda en móvil */
+  .minimap-wrap {
+    top: 12px;
+    left: 12px;
+    bottom: auto;
+    right: auto;
+    padding: 4px;
+  }
+  #minimap { width: 110px !important; height: 80px !important; }
+  /* Reemplazar el botón "Pistas" por una flecha minimalista arriba a la derecha */
+  .back-btn {
+    top: 12px;
+    right: 12px;
+    left: auto;
+    bottom: auto;
+    padding: 8px 12px;
+    font-size: 11px;
+  }
+  /* En móvil ocultamos el bloque de "Vuelta actual / Mejor" del HUD-left para
+     dejar espacio al minimapa — el cronómetro queda visible en el HUD-center */
+  .hud-left { display: none; }
+  /* Compactar el HUD-right y mover el "Pista" arriba a la derecha bajo el back-btn */
+  .hud-right { padding-top: 48px; }
+  .hud-right .hud-block:first-child { display: none; }
   .touch-side { bottom: 24px; }
   .touch-side.touch-left  { left: 12px; }
   .touch-side.touch-right { right: 12px; }
