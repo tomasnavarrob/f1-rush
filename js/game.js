@@ -387,13 +387,21 @@ function startRace(trackDef) {
   state.lapInvalid = false;
   state.offTrackPrev = false;
 
-  // IA (solo en modo carrera)
+  // IA (solo en modo carrera) — 10 oponentes con dos pilotos por equipo
   state.ai = [];
   if (state.mode === 'race') {
+    const L = id => LIVERIES.find(x => x.id === id);
     const aiConfigs = [
-      { livery: LIVERIES[3], pace: 0.94, name: 'Verstappen' },
-      { livery: LIVERIES[1], pace: 0.90, name: 'Hamilton' },
-      { livery: LIVERIES[2], pace: 0.86, name: 'Norris' },
+      { livery: L('redbull'),  pace: 0.97, name: 'Verstappen' },
+      { livery: L('mclaren'),  pace: 0.96, name: 'Norris' },
+      { livery: L('ferrari'),  pace: 0.95, name: 'Leclerc' },
+      { livery: L('mercedes'), pace: 0.94, name: 'Hamilton' },
+      { livery: L('mclaren'),  pace: 0.93, name: 'Piastri' },
+      { livery: L('ferrari'),  pace: 0.92, name: 'Sainz' },
+      { livery: L('mercedes'), pace: 0.91, name: 'Russell' },
+      { livery: L('redbull'),  pace: 0.89, name: 'Pérez' },
+      { livery: L('aston'),    pace: 0.87, name: 'Alonso' },
+      { livery: L('alpine'),   pace: 0.85, name: 'Gasly' },
     ];
     aiConfigs.forEach((cfg, i) => {
       state.ai.push({
