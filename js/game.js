@@ -938,9 +938,9 @@ function update(dt, now) {
       }
     }
     if (state.startLights >= 0) {
+      // Bloqueamos el coche pero NO los inputs: si el jugador mantiene el gas
+      // durante la cuenta atrás, arrancará al instante en el GO.
       car.speed = 0;
-      state.inputs.accelerate = false;
-      state.inputs.brake = false;
       state.lapStart = now;
       state.lastSampleAt = now;
       updateHUD(now);
@@ -974,8 +974,15 @@ function update(dt, now) {
       bestHalfW = tr.widths ? tr.widths[i] * 0.5 : TRACK_ROAD;
     }
   }
-  // Margen extra (~1.5m) para no marcar off-track al pisar el kerb
-  state.offTrack = bestDist > bestHalfW + 1.5;
+  // Histéresis: necesita 3m extra para entrar a off-track, y volver a < halfW+1m para salir.
+  // Esto evita que el flag oscile en los bordes/kerbs y produzca cortes de velocidad.
+  const enterOff  = bestHalfW + 3.0;
+  const leaveOff  = bestHalfW + 1.0;
+  if (state.offTrack) {
+    if (bestDist < leaveOff) state.offTrack = false;
+  } else {
+    if (bestDist > enterOff) state.offTrack = true;
+  }
 
   // ---- Detección de vuelta ----
   const n = tr.smooth.length;
