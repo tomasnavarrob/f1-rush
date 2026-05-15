@@ -238,9 +238,11 @@ html, body, #app {
   font-weight: 700;
 }
 .hint-mobile { display: none; }
+.pause-btn-mobile { display: none; }
 @media (hover: none) and (pointer: coarse) {
   .hint { display: none; }
   .hint-mobile { display: block; }
+  .pause-btn-mobile { display: flex; }
 }
 
 /* =========== TRACK LIMITS =========== */
@@ -371,23 +373,36 @@ html, body, #app {
   /* Subir HUD inferior para liberar zona de los controles táctiles */
   .sectors-panel { bottom: 130px; gap: 6px; }
   .sector { min-width: 70px; padding: 6px 10px; }
-  /* Minimapa arriba a la izquierda en móvil */
+  /* Minimapa arriba a la izquierda en móvil — usar safe-area para notch */
   .minimap-wrap {
-    top: 12px;
-    left: 12px;
+    top: calc(12px + env(safe-area-inset-top, 0px));
+    left: calc(12px + env(safe-area-inset-left, 0px));
     bottom: auto;
     right: auto;
     padding: 4px;
+    backdrop-filter: none;
   }
   #minimap { width: 110px !important; height: 80px !important; }
-  /* Reemplazar el botón "Pistas" por una flecha minimalista arriba a la derecha */
-  .back-btn {
-    top: 12px;
+  /* En móvil ocultamos el back-btn: usar el botón de pausa para acceder al menú */
+  .back-btn { display: none !important; }
+  .pause-btn-mobile {
+    position: absolute;
+    top: calc(12px + env(safe-area-inset-top, 0px));
     right: 12px;
-    left: auto;
-    bottom: auto;
-    padding: 8px 12px;
-    font-size: 11px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.55);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: #fff;
+    font-size: 16px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 7;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
   }
   /* En móvil reservamos el espacio del HUD-left para el minimapa, pero
      mantenemos el contenedor para que el speedo siga centrado vía flex.
@@ -406,8 +421,8 @@ html, body, #app {
   /* Tiempo de vuelta y mejor: chip pequeño bajo el minimapa */
   .lap-info {
     position: absolute;
-    top: 100px;
-    left: 12px;
+    top: calc(100px + env(safe-area-inset-top, 0px));
+    left: calc(12px + env(safe-area-inset-left, 0px));
     z-index: 6;
     background: rgba(0,0,0,0.55);
     border: 1px solid rgba(255,255,255,0.08);

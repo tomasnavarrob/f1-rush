@@ -1976,6 +1976,8 @@ function drawMinimap() {
 //  EVENTOS DE UI
 // ============================================================
 document.getElementById('backBtn').addEventListener('click', exitRace);
+const pauseBtnMobile = document.getElementById('pauseBtnMobile');
+if (pauseBtnMobile) pauseBtnMobile.addEventListener('click', togglePause);
 document.getElementById('resumeBtn').addEventListener('click', togglePause);
 document.getElementById('restartBtn').addEventListener('click', () => { togglePause(); restartLap(); });
 document.getElementById('exitBtn').addEventListener('click', () => { togglePause(); exitRace(); });
