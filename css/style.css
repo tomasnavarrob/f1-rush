@@ -478,15 +478,14 @@ html, body, #app {
      Damos un margen seguro: panel sube hasta bottom:120 + safe-area-inset-bottom. */
   .sectors-panel {
     bottom: calc(118px + env(safe-area-inset-bottom, 0px));
-    gap: 4px;
-    /* En móvil sólo mostramos S1 + S2 para no chocar con los joysticks */
-    max-width: 200px;
+    gap: 3px;
+    max-width: 240px;
     left: 50%;
     transform: translateX(-50%);
   }
-  .sector { min-width: 56px; padding: 4px 8px; font-size: 11px; }
-  .sector .sec-val { font-size: 13px; }
-  .sectors-panel .sector:nth-child(3) { display: none; }
+  .sector { min-width: 48px; padding: 4px 6px; font-size: 10px; }
+  .sector .sec-val { font-size: 12px; }
+  .sector .sec-delta { font-size: 9px; }
   /* Minimapa arriba a la izquierda en móvil — usar safe-area para notch */
   .minimap-wrap {
     top: calc(12px + env(safe-area-inset-top, 0px));
