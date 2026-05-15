@@ -473,9 +473,20 @@ html, body, #app {
   .overlay,
   .overlay-card { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
   .touch-controls { display: block; }
-  /* Subir HUD inferior para liberar zona de los controles táctiles */
-  .sectors-panel { bottom: 130px; gap: 6px; }
-  .sector { min-width: 70px; padding: 6px 10px; }
+  /* Subir HUD inferior para liberar zona de los controles táctiles.
+     Los botones GAS/FRENO/arrows están en bottom:24 con altura 74 → top 98.
+     Damos un margen seguro: panel sube hasta bottom:120 + safe-area-inset-bottom. */
+  .sectors-panel {
+    bottom: calc(118px + env(safe-area-inset-bottom, 0px));
+    gap: 4px;
+    /* En móvil sólo mostramos S1 + S2 para no chocar con los joysticks */
+    max-width: 200px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .sector { min-width: 56px; padding: 4px 8px; font-size: 11px; }
+  .sector .sec-val { font-size: 13px; }
+  .sectors-panel .sector:nth-child(3) { display: none; }
   /* Minimapa arriba a la izquierda en móvil — usar safe-area para notch */
   .minimap-wrap {
     top: calc(12px + env(safe-area-inset-top, 0px));
