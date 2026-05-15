@@ -1078,7 +1078,9 @@ function update(dt, now) {
   updateEffects(dt, now);
 
   // ---- Caja de cambios: 8 marchas tipo F1 ----
-  // El RPM sube linealmente dentro de cada marcha y "cae" al subir → suena más excitante
+  // El cambio se siente a través del motor: al subir de marcha el RPM cae
+  // de ~0.98 (redline) a ~0.25 (idle de la nueva marcha), creando el
+  // característico "sube y cae" de un F1. Sin clicks extras.
   const GEAR_TOPS = [14, 28, 44, 60, 74, 87, 97, 105]; // m/s en cada redline
   let g = 0;
   while (g < GEAR_TOPS.length - 1 && car.speed > GEAR_TOPS[g]) g++;
@@ -1087,12 +1089,15 @@ function update(dt, now) {
   const gFrac = Math.max(0, Math.min(1, (car.speed - gMin) / (gMax - gMin)));
   const targetGear = g + 1;
   if (targetGear !== state.gear) {
-    if (targetGear > state.gear) engine.upshift();
-    else engine.downshift();
+    // Mini "corte" de combustible al cambiar: deja el RPM cayendo durante 80ms
+    // para que se escuche claramente el cambio sin meter un sonido aparte.
+    state.gearShiftCutUntil = now + 80;
     state.gear = targetGear;
   }
+  const inCut = state.gearShiftCutUntil && now < state.gearShiftCutUntil;
   // RPM por marcha: 0.25 idle de la marcha → 0.98 redline
-  engine.setRpm(0.25 + gFrac * 0.73);
+  const targetRpm = inCut ? 0.10 : (0.25 + gFrac * 0.73);
+  engine.setRpm(targetRpm);
 
   // ---- Muestreo para fantasma ----
   if (now - state.lastSampleAt >= GHOST_SAMPLE_MS) {
