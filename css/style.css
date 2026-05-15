@@ -359,12 +359,44 @@ html, body, #app {
     padding: 8px 12px;
     font-size: 11px;
   }
-  /* En móvil ocultamos el bloque de "Vuelta actual / Mejor" del HUD-left para
-     dejar espacio al minimapa — el cronómetro queda visible en el HUD-center */
-  .hud-left { display: none; }
-  /* Compactar el HUD-right y mover el "Pista" arriba a la derecha bajo el back-btn */
-  .hud-right { padding-top: 48px; }
+  /* En móvil reservamos el espacio del HUD-left para el minimapa, pero
+     mantenemos el contenedor para que el speedo siga centrado vía flex.
+     Movemos el tiempo de vuelta a una etiqueta chica bajo el minimapa. */
+  .hud { padding: 12px 12px; }
+  .hud-left {
+    visibility: hidden;
+    min-width: 130px;   /* mismo ancho que el minimapa para mantener el centro */
+    margin-right: 0;
+  }
+  /* Compactar el HUD-right: ocultamos el nombre de la pista y dejamos el contador de vueltas */
+  .hud-right { padding-top: 44px; min-width: 70px; }
+  .hud-right .hud-block { margin-right: 0; }
   .hud-right .hud-block:first-child { display: none; }
+  .hud-right .hud-value.sm { font-size: 14px; }
+  /* Tiempo de vuelta y mejor: chip pequeño bajo el minimapa */
+  .lap-info {
+    position: absolute;
+    top: 100px;
+    left: 12px;
+    z-index: 6;
+    background: rgba(0,0,0,0.55);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-family: "SF Mono", "Menlo", monospace;
+    font-size: 12px;
+    color: var(--fg);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 110px;
+  }
+  .lap-info .lap-best { color: #ffd84d; font-size: 11px; }
+}
+/* En desktop el chip móvil no se muestra */
+.lap-info { display: none; }
+@media (hover: none) and (pointer: coarse) {
+  .lap-info { display: flex; }
   .touch-side { bottom: 24px; }
   .touch-side.touch-left  { left: 12px; }
   .touch-side.touch-right { right: 12px; }

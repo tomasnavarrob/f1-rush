@@ -402,6 +402,8 @@ function startRace(trackDef) {
   // UI
   document.getElementById('trackName').textContent = trackDef.name;
   document.getElementById('bestLap').textContent = fmtTime(state.bestLap);
+  const bm = document.getElementById('bestLapMobile');
+  if (bm) bm.textContent = 'MEJOR ' + fmtTime(state.bestLap);
   document.getElementById('lapCount').textContent =
     state.mode === 'race' ? `${state.lapCount} / ${state.totalLapsRace}` : `Vuelta ${state.lapCount}`;
 
@@ -1117,6 +1119,8 @@ function onLapComplete(lapMs, now) {
   if (improvedLap) {
     state.bestLap = lapMs;
     document.getElementById('bestLap').textContent = fmtTime(lapMs);
+    const bm2 = document.getElementById('bestLapMobile');
+    if (bm2) bm2.textContent = 'MEJOR ' + fmtTime(lapMs);
     showToast('NUEVO RÉCORD PERSONAL · ' + fmtTime(lapMs), 'purple');
     engine.jingle(true);
     // Guardar fantasma
@@ -1206,7 +1210,10 @@ function updateHUD(now) {
 
   // Mientras corren las luces, mostramos el reloj en 0
   const tShown = state.startLights >= 0 ? 0 : Math.max(0, now - state.lapStart);
-  document.getElementById('currentLap').textContent = fmtTime(tShown);
+  const lapStr = fmtTime(tShown);
+  document.getElementById('currentLap').textContent = lapStr;
+  const mEl = document.getElementById('currentLapMobile');
+  if (mEl) mEl.textContent = lapStr;
   const kmh = Math.round(state.car.speed * 3.6);
   document.getElementById('speed').textContent = kmh;
 
