@@ -561,6 +561,10 @@ html, body, #app {
   width: 100%;
   height: 100%;
   display: block;
+  /* Forzar capa propia de hardware accel para evitar artefactos de compositing en iOS */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  will-change: transform;
 }
 
 .hud {
