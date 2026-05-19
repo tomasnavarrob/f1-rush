@@ -472,18 +472,23 @@ function startRace(trackDef) {
   state.lapCount = 1;
   state.lapStart = performance.now();
   state.bestLap = loadBests()[trackDef.id] || null;
-  // Récord global de la pista (top 1 del leaderboard global). Se actualiza
-  // mientras corre. Si batís este tiempo → "RÉCORD DE PISTA".
+  // Récord global de la pista (top 1 del leaderboard global).
   state.globalBest = null;
   state.globalBestHolder = null;
+  state.globalBestLoaded = false;   // true cuando la API ya respondió
   fetchGlobalLap(trackDef.id).then(data => {
+    state.globalBestLoaded = true;
     if (data && data.entries && data.entries.length > 0) {
       state.globalBest = data.entries[0].ms;
       state.globalBestHolder = data.entries[0].name || '?';
       const hud = document.getElementById('trackRecordHud');
       if (hud) hud.textContent = `🏆 ${state.globalBestHolder} ${fmtTime(state.globalBest)}`;
+    } else {
+      // Pista virgen: cualquier vuelta válida será récord
+      const hud = document.getElementById('trackRecordHud');
+      if (hud) hud.textContent = `🏆 sin récord aún`;
     }
-  }).catch(() => {});
+  }).catch(() => { state.globalBestLoaded = true; });
   state.paused = false;
   state.finished = false;
   state.raceResults = null;
@@ -1293,13 +1298,23 @@ function onLapComplete(lapMs, now) {
       document.getElementById('bestLap').textContent = fmtTime(lapMs);
       const bm2 = document.getElementById('bestLapMobile');
       if (bm2) bm2.textContent = 'MEJOR ' + fmtTime(lapMs);
-      // ¿Es récord de pista? (mejor que el #1 global conocido)
-      const isTrackRecord = state.globalBest != null && lapMs < state.globalBest;
+      // ¿Es récord de pista?
+      //  - Si globalBest != null y la vuelta es más rápida: récord
+      //  - Si la pista estaba virgen (globalBest == null y la API ya respondió): primer récord
+      //  - Si la API todavía no respondió: no claimeamos récord (lo veremos en el próximo intento)
+      let isTrackRecord = false;
+      if (state.globalBestLoaded) {
+        if (state.globalBest == null) isTrackRecord = true;
+        else if (lapMs < state.globalBest) isTrackRecord = true;
+      }
       if (isTrackRecord) {
         const prev = state.globalBestHolder ? ` (le ganaste a ${state.globalBestHolder})` : '';
         showToast('🏆 RÉCORD DE PISTA · ' + fmtTime(lapMs) + prev, 'purple');
         state.globalBest = lapMs;
         state.globalBestHolder = localStorage.getItem(PLAYER_NAME_KEY) || 'Tú';
+        // Actualizar HUD también
+        const hud = document.getElementById('trackRecordHud');
+        if (hud) hud.textContent = `🏆 ${state.globalBestHolder} ${fmtTime(lapMs)}`;
         showTrackRecordBanner(lapMs);
       } else {
         showToast('NUEVO RÉCORD PERSONAL · ' + fmtTime(lapMs), 'purple');
