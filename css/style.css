@@ -731,6 +731,13 @@ html, body, #app {
   font-weight: 700;
   letter-spacing: -0.02em;
 }
+.hud-value.record { color: #c084fc; }
+.hud-record-holder {
+  font-size: 10px;
+  color: var(--fg-dim);
+  letter-spacing: 0.05em;
+  margin-top: 2px;
+}
 .hud-value.sm { font-size: 16px; font-family: inherit; }
 .hud-value.best { color: var(--accent-2); }
 .hud-right { text-align: right; }

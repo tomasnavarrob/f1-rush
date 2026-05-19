@@ -481,14 +481,9 @@ function startRace(trackDef) {
     if (data && data.entries && data.entries.length > 0) {
       state.globalBest = data.entries[0].ms;
       state.globalBestHolder = data.entries[0].name || '?';
-      const hud = document.getElementById('trackRecordHud');
-      if (hud) hud.textContent = `🏆 ${state.globalBestHolder} ${fmtTime(state.globalBest)}`;
-    } else {
-      // Pista virgen: cualquier vuelta válida será récord
-      const hud = document.getElementById('trackRecordHud');
-      if (hud) hud.textContent = `🏆 sin récord aún`;
     }
-  }).catch(() => { state.globalBestLoaded = true; });
+    updateTrackRecordHud();
+  }).catch(() => { state.globalBestLoaded = true; updateTrackRecordHud(); });
   state.paused = false;
   state.finished = false;
   state.raceResults = null;
@@ -1312,9 +1307,7 @@ function onLapComplete(lapMs, now) {
         showToast('🏆 RÉCORD DE PISTA · ' + fmtTime(lapMs) + prev, 'purple');
         state.globalBest = lapMs;
         state.globalBestHolder = localStorage.getItem(PLAYER_NAME_KEY) || 'Tú';
-        // Actualizar HUD también
-        const hud = document.getElementById('trackRecordHud');
-        if (hud) hud.textContent = `🏆 ${state.globalBestHolder} ${fmtTime(lapMs)}`;
+        updateTrackRecordHud();
         showTrackRecordBanner(lapMs);
       } else {
         showToast('NUEVO RÉCORD PERSONAL · ' + fmtTime(lapMs), 'purple');
@@ -2278,6 +2271,22 @@ async function fetchGlobalLap(trackId) {
     return { error: e.message, entries: [] };
   }
 }
+// Actualizar todos los elementos del HUD que muestran el récord de pista
+function updateTrackRecordHud() {
+  const time = state.globalBest != null ? fmtTime(state.globalBest) : '--:--.---';
+  const holder = state.globalBest != null ? (state.globalBestHolder || '') : 'sin récord aún';
+  const desktopT = document.getElementById('trackRecord');
+  if (desktopT) desktopT.textContent = time;
+  const desktopH = document.getElementById('trackRecordHolder');
+  if (desktopH) desktopH.textContent = holder;
+  const mobile = document.getElementById('trackRecordHud');
+  if (mobile) {
+    mobile.textContent = state.globalBest != null
+      ? `🏆 ${holder} ${time}`
+      : '🏆 sin récord aún';
+  }
+}
+
 // Mostrar banner "RÉCORD DE PISTA" que no tape el juego
 function showTrackRecordBanner(lapMs) {
   let el = document.getElementById('trackRecordBanner');
