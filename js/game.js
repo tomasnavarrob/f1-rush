@@ -554,6 +554,8 @@ function exitRace() {
   engine.stop();
   music.start();
   renderMenu();
+  // Subir PBs acumulados durante la sesión al leaderboard global
+  flushPendingGlobalSubmits();
 }
 
 // ============================================================
@@ -1296,8 +1298,8 @@ function onLapComplete(lapMs, now) {
       // Guardar fantasma
       state.ghostSamples = state.recordSamples.slice();
       saveGhost(trackId, state.ghostSamples);
-      // Pedir nombre y subir al leaderboard global
-      promptSubmitToGlobalLeaderboard(trackId, lapMs);
+      // Encolar PB para subir al leaderboard global cuando termine la sesión
+      queueGlobalSubmit(trackId, lapMs);
     } else {
       showToast('Vuelta ' + fmtTime(lapMs), 'green');
       engine.jingle(false);
@@ -2250,34 +2252,57 @@ async function fetchGlobalLap(trackId) {
     return { error: e.message, entries: [] };
   }
 }
-function promptSubmitToGlobalLeaderboard(trackId, lapMs) {
-  const overlay = document.getElementById('lbSubmitOverlay');
-  const input = document.getElementById('lbName');
-  const msg = document.getElementById('lbSubmitMsg');
-  const timeEl = document.getElementById('lbSubmitTime');
-  if (!overlay) return;
-  timeEl.textContent = fmtTime(lapMs);
-  input.value = localStorage.getItem(PLAYER_NAME_KEY) || '';
-  msg.textContent = '';
-  overlay.classList.remove('hidden');
-  setTimeout(() => input.focus(), 100);
-
-  const submit = async () => {
-    const name = (input.value || '').trim();
-    if (name.length < 2) { msg.textContent = 'Nombre muy corto (mín 2 caracteres)'; return; }
-    localStorage.setItem(PLAYER_NAME_KEY, name);
-    msg.textContent = 'Subiendo...';
-    const result = await submitGlobalLap(trackId, lapMs, name);
-    if (result.error) {
-      msg.textContent = '⚠️ ' + result.error;
-    } else {
-      msg.textContent = '✓ Subido' + (result.rank ? ` · puesto #${result.rank}` : '');
-      setTimeout(() => overlay.classList.add('hidden'), 1200);
+// Cola de PBs pendientes de subir cuando termine la sesión (vuelta/carrera)
+const pendingGlobalSubmits = [];
+function queueGlobalSubmit(trackId, lapMs) {
+  pendingGlobalSubmits.push({ trackId, lapMs });
+}
+async function flushPendingGlobalSubmits() {
+  if (pendingGlobalSubmits.length === 0) return;
+  let name = localStorage.getItem(PLAYER_NAME_KEY);
+  if (!name) {
+    name = await askPlayerName();
+    if (!name) { pendingGlobalSubmits.length = 0; return; }
+  }
+  // Solo subir el mejor tiempo por pista de la cola
+  const bestPerTrack = {};
+  for (const item of pendingGlobalSubmits) {
+    if (!bestPerTrack[item.trackId] || item.lapMs < bestPerTrack[item.trackId]) {
+      bestPerTrack[item.trackId] = item.lapMs;
     }
-  };
-  document.getElementById('lbSubmitBtn').onclick = submit;
-  document.getElementById('lbSkipBtn').onclick = () => overlay.classList.add('hidden');
-  input.onkeydown = (e) => { if (e.key === 'Enter') submit(); };
+  }
+  pendingGlobalSubmits.length = 0;
+  for (const [trackId, lapMs] of Object.entries(bestPerTrack)) {
+    const result = await submitGlobalLap(trackId, lapMs, name);
+    if (!result.error) {
+      showToast(`🌍 ${name} · ${fmtTime(lapMs)}` + (result.rank ? ` · #${result.rank}` : ''), 'purple');
+    }
+  }
+}
+function askPlayerName() {
+  return new Promise(resolve => {
+    const overlay = document.getElementById('lbSubmitOverlay');
+    const input = document.getElementById('lbName');
+    const msg = document.getElementById('lbSubmitMsg');
+    const timeEl = document.getElementById('lbSubmitTime');
+    if (!overlay) { resolve(null); return; }
+    timeEl.textContent = '¡Subí tu tiempo al leaderboard!';
+    input.value = '';
+    msg.textContent = '';
+    overlay.classList.remove('hidden');
+    setTimeout(() => input.focus(), 100);
+    const submit = () => {
+      const name = (input.value || '').trim();
+      if (name.length < 2) { msg.textContent = 'Mínimo 2 caracteres'; return; }
+      localStorage.setItem(PLAYER_NAME_KEY, name);
+      overlay.classList.add('hidden');
+      resolve(name);
+    };
+    const skip = () => { overlay.classList.add('hidden'); resolve(null); };
+    document.getElementById('lbSubmitBtn').onclick = submit;
+    document.getElementById('lbSkipBtn').onclick = skip;
+    input.onkeydown = (e) => { if (e.key === 'Enter') submit(); };
+  });
 }
 
 async function renderGlobalLeaderboardTab(body) {
