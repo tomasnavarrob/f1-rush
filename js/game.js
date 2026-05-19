@@ -472,6 +472,18 @@ function startRace(trackDef) {
   state.lapCount = 1;
   state.lapStart = performance.now();
   state.bestLap = loadBests()[trackDef.id] || null;
+  // Récord global de la pista (top 1 del leaderboard global). Se actualiza
+  // mientras corre. Si batís este tiempo → "RÉCORD DE PISTA".
+  state.globalBest = null;
+  state.globalBestHolder = null;
+  fetchGlobalLap(trackDef.id).then(data => {
+    if (data && data.entries && data.entries.length > 0) {
+      state.globalBest = data.entries[0].ms;
+      state.globalBestHolder = data.entries[0].name || '?';
+      const hud = document.getElementById('trackRecordHud');
+      if (hud) hud.textContent = `🏆 ${state.globalBestHolder} ${fmtTime(state.globalBest)}`;
+    }
+  }).catch(() => {});
   state.paused = false;
   state.finished = false;
   state.raceResults = null;
@@ -1281,7 +1293,17 @@ function onLapComplete(lapMs, now) {
       document.getElementById('bestLap').textContent = fmtTime(lapMs);
       const bm2 = document.getElementById('bestLapMobile');
       if (bm2) bm2.textContent = 'MEJOR ' + fmtTime(lapMs);
-      showToast('NUEVO RÉCORD PERSONAL · ' + fmtTime(lapMs), 'purple');
+      // ¿Es récord de pista? (mejor que el #1 global conocido)
+      const isTrackRecord = state.globalBest != null && lapMs < state.globalBest;
+      if (isTrackRecord) {
+        const prev = state.globalBestHolder ? ` (le ganaste a ${state.globalBestHolder})` : '';
+        showToast('🏆 RÉCORD DE PISTA · ' + fmtTime(lapMs) + prev, 'purple');
+        state.globalBest = lapMs;
+        state.globalBestHolder = localStorage.getItem(PLAYER_NAME_KEY) || 'Tú';
+        showTrackRecordBanner(lapMs);
+      } else {
+        showToast('NUEVO RÉCORD PERSONAL · ' + fmtTime(lapMs), 'purple');
+      }
       engine.jingle(true);
       // Guardar fantasma
       state.ghostSamples = state.recordSamples.slice();
@@ -2241,6 +2263,21 @@ async function fetchGlobalLap(trackId) {
     return { error: e.message, entries: [] };
   }
 }
+// Mostrar banner "RÉCORD DE PISTA" que no tape el juego
+function showTrackRecordBanner(lapMs) {
+  let el = document.getElementById('trackRecordBanner');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'trackRecordBanner';
+    el.className = 'track-record-banner';
+    document.body.appendChild(el);
+  }
+  el.innerHTML = `<div class="trb-trophy">🏆</div><div class="trb-text"><div class="trb-label">RÉCORD DE PISTA</div><div class="trb-time">${fmtTime(lapMs)}</div></div>`;
+  el.classList.remove('hidden');
+  el.classList.add('show');
+  setTimeout(() => { el.classList.remove('show'); }, 3200);
+}
+
 // Cola de PBs pendientes de subir cuando termine la sesión (vuelta/carrera)
 const pendingGlobalSubmits = [];
 function queueGlobalSubmit(trackId, lapMs) {
