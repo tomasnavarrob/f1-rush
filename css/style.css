@@ -558,9 +558,10 @@ html, body, #app {
      Los botones GAS/FRENO/arrows están en bottom:24 con altura 74 → top 98.
      Damos un margen seguro: panel sube hasta bottom:120 + safe-area-inset-bottom. */
   .sectors-panel {
-    bottom: calc(118px + env(safe-area-inset-bottom, 0px));
+    /* Subir bien arriba de los joysticks (88+74+24=186px desde abajo) */
+    bottom: calc(200px + env(safe-area-inset-bottom, 0px));
     gap: 3px;
-    max-width: 240px;
+    max-width: 200px;
     left: 50%;
     transform: translateX(-50%);
   }
@@ -647,15 +648,14 @@ html, body, #app {
   background: #050608;
 }
 #canvas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;        /* viewport dinámico iOS — respeta URL bar */
   display: block;
-  /* Forzar capa propia de hardware accel para evitar artefactos de compositing en iOS */
-  transform: translateZ(0);
-  -webkit-transform: translateZ(0);
-  will-change: transform;
+  background: #2f6a3a;   /* fallback verde mientras el grass pattern carga */
+  z-index: 0;
 }
 
 .hud {

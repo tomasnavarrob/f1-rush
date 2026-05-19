@@ -990,13 +990,18 @@ function initGrassPattern() {
 
 function resizeCanvas() {
   const dpr = window.devicePixelRatio || 1;
-  canvas.width = window.innerWidth * dpr;
-  canvas.height = window.innerHeight * dpr;
-  canvas.style.width = window.innerWidth + 'px';
-  canvas.style.height = window.innerHeight + 'px';
+  // Usamos el tamaño REAL del canvas en pantalla (que ya respeta 100dvh/100vw)
+  // en vez de window.innerWidth/innerHeight (que en iOS Safari puede dar
+  // valores distintos del área visible y crear un "borde" inset).
+  const rect = canvas.getBoundingClientRect();
+  const w = rect.width || window.innerWidth;
+  const h = rect.height || window.innerHeight;
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 window.addEventListener('resize', resizeCanvas);
+window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 100));
 
 // ============================================================
 //  PROYECCIÓN
@@ -1484,8 +1489,9 @@ function showToast(text, kind = '') {
 //  RENDER
 // ============================================================
 function render(now) {
-  const W = window.innerWidth;
-  const H = window.innerHeight;
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.width / dpr;
+  const H = canvas.height / dpr;
   ctx.clearRect(0, 0, W, H);
 
   // Fondo de césped (textura tileable)
