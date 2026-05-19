@@ -2305,26 +2305,98 @@ function askPlayerName() {
   });
 }
 
+// ISO-3166 alpha-2 → emoji flag
+function flagFromCountry(code) {
+  if (!code || code.length !== 2) return '🌐';
+  const A = 0x1F1E6, off = 'A'.charCodeAt(0);
+  return String.fromCodePoint(A + code.charCodeAt(0) - off, A + code.charCodeAt(1) - off);
+}
+function timeAgo(ts) {
+  const sec = Math.max(1, Math.floor((Date.now() - ts) / 1000));
+  if (sec < 60) return 'recién';
+  const m = Math.floor(sec / 60);
+  if (m < 60) return `hace ${m}m`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `hace ${h}h`;
+  const d = Math.floor(h / 24);
+  if (d < 30) return `hace ${d}d`;
+  return new Date(ts).toLocaleDateString();
+}
+function fmtDelta(ms) {
+  if (ms < 1000) return `+${(ms/1000).toFixed(3)}s`;
+  return `+${(ms/1000).toFixed(3)}s`;
+}
+
+// Estado del tab global
+const globalLbState = { trackId: null, loading: false };
+
 async function renderGlobalLeaderboardTab(body) {
-  body.innerHTML = '<p style="color:var(--fg-dim);padding:24px;text-align:center">Cargando…</p>';
-  // Mostrar las 24 pistas y dejar al usuario expandir
-  const sections = await Promise.all(TRACKS.map(async t => {
-    const data = await fetchGlobalLap(t.id);
-    if (data.error || !data.entries || data.entries.length === 0) return null;
-    const rows = data.entries.slice(0, 10).map((e, i) => `
-      <div class="lb-row">
-        <span class="lb-pos">${i+1}.</span>
-        <span class="lb-name">${(e.name||'?')}${e.country ? ' <span style="color:var(--fg-dim);font-size:10px">'+e.country+'</span>' : ''}</span>
-        <span class="lb-ms">${fmtTime(e.ms)}</span>
-      </div>`).join('');
-    return `<div class="lb-track"><h4>${t.flag||''} ${t.name}</h4>${rows}</div>`;
-  }));
-  const valid = sections.filter(Boolean);
-  if (valid.length === 0) {
-    body.innerHTML = '<p style="color:var(--fg-dim);padding:24px;text-align:center">Aún no hay tiempos en el leaderboard global. ¡Sé el primero!</p>';
-  } else {
-    body.innerHTML = valid.join('');
+  body.innerHTML = `
+    <div class="glb-toolbar">
+      <label class="glb-label">Pista</label>
+      <select id="glbTrackSelect" class="glb-select"></select>
+    </div>
+    <div id="glbTable"></div>
+  `;
+  const select = document.getElementById('glbTrackSelect');
+  TRACKS.forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t.id;
+    opt.textContent = `${t.flag||''} ${t.name}`;
+    select.appendChild(opt);
+  });
+  // Si hay un track recordado, seleccionarlo; sino, el primero
+  const saved = localStorage.getItem('f1rush.lbLastTrack');
+  if (saved && TRACKS.some(t => t.id === saved)) {
+    select.value = saved;
   }
+  select.onchange = () => {
+    localStorage.setItem('f1rush.lbLastTrack', select.value);
+    loadGlobalForTrack(select.value);
+  };
+  loadGlobalForTrack(select.value);
+}
+
+async function loadGlobalForTrack(trackId) {
+  const tableEl = document.getElementById('glbTable');
+  if (!tableEl) return;
+  tableEl.innerHTML = '<p style="color:var(--fg-dim);padding:18px;text-align:center">Cargando…</p>';
+  const data = await fetchGlobalLap(trackId);
+  if (data.error) {
+    tableEl.innerHTML = `<p style="color:var(--accent);padding:18px;text-align:center">⚠️ ${data.error}</p>`;
+    return;
+  }
+  if (!data.entries || data.entries.length === 0) {
+    tableEl.innerHTML = '<p style="color:var(--fg-dim);padding:18px;text-align:center">Aún no hay tiempos para esta pista. ¡Sé el primero!</p>';
+    return;
+  }
+  const myName = (localStorage.getItem(PLAYER_NAME_KEY) || '').toLowerCase();
+  const leader = data.entries[0].ms;
+  const rows = data.entries.map((e, i) => {
+    const delta = i === 0 ? '—' : fmtDelta(e.ms - leader);
+    const isMe = myName && (e.name || '').toLowerCase() === myName;
+    const posClass = i === 0 ? 'lb-pos-1' : (i === 1 ? 'lb-pos-2' : (i === 2 ? 'lb-pos-3' : ''));
+    return `
+      <div class="glb-row ${isMe ? 'me' : ''}">
+        <span class="glb-rank ${posClass}">${i+1}</span>
+        <span class="glb-flag">${flagFromCountry(e.country)}</span>
+        <span class="glb-name">${e.name || '?'}</span>
+        <span class="glb-time">${fmtTime(e.ms)}</span>
+        <span class="glb-delta">${delta}</span>
+        <span class="glb-when">${e.ts ? timeAgo(e.ts) : ''}</span>
+      </div>`;
+  }).join('');
+  tableEl.innerHTML = `
+    <div class="glb-head">
+      <span class="glb-rank">#</span>
+      <span class="glb-flag"></span>
+      <span class="glb-name">Piloto</span>
+      <span class="glb-time">Tiempo</span>
+      <span class="glb-delta">Dif.</span>
+      <span class="glb-when"></span>
+    </div>
+    ${rows}
+  `;
 }
 document.getElementById('statsBtn').addEventListener('click', () => {
   const panel = document.getElementById('statsPanel');

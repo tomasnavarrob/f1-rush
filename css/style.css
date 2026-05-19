@@ -340,6 +340,86 @@ html, body, #app {
 .lb-row .lb-date { color: var(--fg-dim); font-size: 11px; }
 .lb-row .lb-name { flex: 1; margin: 0 8px; font-family: -apple-system, sans-serif; font-size: 12px; }
 
+/* === Leaderboard Global (estilo fullsend) === */
+.glb-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.glb-label {
+  font-size: 11px;
+  color: var(--fg-dim);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.glb-select {
+  flex: 1;
+  background: var(--bg-1);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--fg);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.glb-head, .glb-row {
+  display: grid;
+  grid-template-columns: 36px 28px 1fr 90px 80px 80px;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.glb-head {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.glb-row {
+  font-size: 13px;
+  background: transparent;
+  transition: background 0.1s ease;
+}
+.glb-row:hover { background: rgba(255,255,255,0.03); }
+.glb-row.me { background: rgba(255, 30, 30, 0.08); border-left: 3px solid var(--accent); padding-left: 7px; }
+.glb-rank {
+  font-family: "SF Mono", "Menlo", monospace;
+  font-weight: 700;
+  color: var(--fg-dim);
+  text-align: center;
+}
+.glb-rank.lb-pos-1 { color: #c084fc; font-size: 16px; }
+.glb-rank.lb-pos-2 { color: #fcd34d; }
+.glb-rank.lb-pos-3 { color: #fb923c; }
+.glb-flag { font-size: 18px; text-align: center; }
+.glb-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.glb-row.me .glb-name { color: var(--accent); }
+.glb-time {
+  font-family: "SF Mono", "Menlo", monospace;
+  font-weight: 800;
+  text-align: right;
+}
+.glb-row.lb-pos-1 .glb-time { color: #c084fc; }
+.glb-delta {
+  font-family: "SF Mono", "Menlo", monospace;
+  font-size: 11px;
+  color: var(--fg-dim);
+  text-align: right;
+}
+.glb-when {
+  font-size: 11px;
+  color: var(--fg-dim);
+  text-align: right;
+}
+@media (max-width: 540px) {
+  .glb-head, .glb-row { grid-template-columns: 28px 24px 1fr 80px 70px; }
+  .glb-when { display: none; }
+}
+
 /* =========== TRACK LIMITS =========== */
 .track-limits {
   position: absolute;
