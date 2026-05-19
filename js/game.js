@@ -325,7 +325,7 @@ function renderMenu() {
     `;
     const cnv = card.querySelector('.preview');
     drawTrackPreview(cnv, t);
-    card.addEventListener('click', () => startRace(t));
+    card.addEventListener('click', () => maybeAskNameThenStart(t));
     grid.appendChild(card);
   });
 
@@ -2279,6 +2279,15 @@ async function flushPendingGlobalSubmits() {
     }
   }
 }
+// Antes de la primera carrera: pedir nombre si no está guardado
+async function maybeAskNameThenStart(trackDef) {
+  const saved = localStorage.getItem(PLAYER_NAME_KEY);
+  if (!saved) {
+    await askPlayerName();
+  }
+  startRace(trackDef);
+}
+
 function askPlayerName() {
   return new Promise(resolve => {
     const overlay = document.getElementById('lbSubmitOverlay');
@@ -2286,9 +2295,9 @@ function askPlayerName() {
     const msg = document.getElementById('lbSubmitMsg');
     const timeEl = document.getElementById('lbSubmitTime');
     if (!overlay) { resolve(null); return; }
-    timeEl.textContent = '¡Subí tu tiempo al leaderboard!';
+    timeEl.textContent = '👋 ¿Cuál es tu nombre, piloto?';
     input.value = '';
-    msg.textContent = '';
+    msg.textContent = 'Lo usamos para subir tus tiempos al leaderboard global.';
     overlay.classList.remove('hidden');
     setTimeout(() => input.focus(), 100);
     const submit = () => {

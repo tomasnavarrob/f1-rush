@@ -167,16 +167,14 @@
         </div>
       </div>
 
-      <!-- Modal para enviar mejor vuelta al leaderboard global -->
+      <!-- Modal para nombre del jugador (pedido una sola vez antes de la 1ª carrera) -->
       <div class="overlay hidden" id="lbSubmitOverlay">
         <div class="overlay-card">
-          <h2>¡Nuevo récord!</h2>
-          <div id="lbSubmitTime" style="font-family:monospace;font-size:24px;color:var(--accent-2);margin-bottom:14px"></div>
-          <p style="color:var(--fg-dim);font-size:13px;margin-bottom:8px">Subí tu tiempo al leaderboard global</p>
-          <input id="lbName" type="text" maxlength="16" placeholder="Tu nombre" autocomplete="off" style="width:240px;padding:10px 12px;background:var(--bg-1);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:var(--fg);font-size:14px;margin-bottom:10px" />
-          <div id="lbSubmitMsg" style="font-size:12px;color:var(--fg-dim);min-height:16px;margin-bottom:10px"></div>
-          <button id="lbSubmitBtn">Subir</button>
-          <button id="lbSkipBtn" style="background:transparent;border:1px solid rgba(255,255,255,0.1)">Saltar</button>
+          <h2 id="lbSubmitTime">👋 ¿Cuál es tu nombre, piloto?</h2>
+          <input id="lbName" type="text" maxlength="16" placeholder="Tu nombre" autocomplete="off" style="width:240px;padding:10px 12px;background:var(--bg-1);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:var(--fg);font-size:14px;margin:14px 0 10px" />
+          <div id="lbSubmitMsg" style="font-size:12px;color:var(--fg-dim);min-height:16px;margin-bottom:14px">Lo usamos para subir tus tiempos al leaderboard global.</div>
+          <button id="lbSubmitBtn">Guardar y correr</button>
+          <button id="lbSkipBtn" style="background:transparent;border:1px solid rgba(255,255,255,0.1)">Jugar anónimo</button>
         </div>
       </div>
 
