@@ -645,17 +645,20 @@ html, body, #app {
 
 /* =========== JUEGO =========== */
 #game {
-  background: #050608;
-}
-#canvas {
-  position: fixed;
-  top: 0; left: 0;
+  background: #2f6a3a;
+  /* Forzar viewport dinámico en iOS (respeta el URL bar) — el canvas
+     hereda 100% de aquí, así llega edge-to-edge sin "borde inset" */
   width: 100vw;
   height: 100vh;
-  height: 100dvh;        /* viewport dinámico iOS — respeta URL bar */
+  height: 100dvh;
+}
+#canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   display: block;
   background: #2f6a3a;   /* fallback verde mientras el grass pattern carga */
-  z-index: 0;
 }
 
 .hud {
