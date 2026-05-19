@@ -733,11 +733,17 @@ html, body, #app {
 }
 .hud-value.record { color: #c084fc; }
 .hud-record-holder {
-  font-size: 10px;
-  color: var(--fg-dim);
-  letter-spacing: 0.05em;
-  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #c084fc;
+  letter-spacing: 0.04em;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
+.hud-record-holder .trh-flag { font-size: 18px; line-height: 1; }
+.hud-record-holder .trh-name { font-size: 13px; }
 .hud-value.sm { font-size: 16px; font-family: inherit; }
 .hud-value.best { color: var(--accent-2); }
 .hud-right { text-align: right; }

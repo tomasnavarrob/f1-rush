@@ -475,12 +475,14 @@ function startRace(trackDef) {
   // Récord global de la pista (top 1 del leaderboard global).
   state.globalBest = null;
   state.globalBestHolder = null;
+  state.globalBestCountry = '';
   state.globalBestLoaded = false;   // true cuando la API ya respondió
   fetchGlobalLap(trackDef.id).then(data => {
     state.globalBestLoaded = true;
     if (data && data.entries && data.entries.length > 0) {
       state.globalBest = data.entries[0].ms;
       state.globalBestHolder = data.entries[0].name || '?';
+      state.globalBestCountry = data.entries[0].country || '';
     }
     updateTrackRecordHud();
   }).catch(() => { state.globalBestLoaded = true; updateTrackRecordHud(); });
@@ -1307,6 +1309,7 @@ function onLapComplete(lapMs, now) {
         showToast('🏆 RÉCORD DE PISTA · ' + fmtTime(lapMs) + prev, 'purple');
         state.globalBest = lapMs;
         state.globalBestHolder = localStorage.getItem(PLAYER_NAME_KEY) || 'Tú';
+        state.globalBestCountry = getPlayerCountry();
         updateTrackRecordHud();
         showTrackRecordBanner(lapMs);
       } else {
@@ -2275,14 +2278,21 @@ async function fetchGlobalLap(trackId) {
 function updateTrackRecordHud() {
   const time = state.globalBest != null ? fmtTime(state.globalBest) : '--:--.---';
   const holder = state.globalBest != null ? (state.globalBestHolder || '') : 'sin récord aún';
+  const flag = state.globalBest != null ? flagFromCountry(state.globalBestCountry || '') : '';
   const desktopT = document.getElementById('trackRecord');
   if (desktopT) desktopT.textContent = time;
   const desktopH = document.getElementById('trackRecordHolder');
-  if (desktopH) desktopH.textContent = holder;
+  if (desktopH) {
+    if (state.globalBest != null) {
+      desktopH.innerHTML = `<span class="trh-flag">${flag}</span><span class="trh-name">${holder}</span>`;
+    } else {
+      desktopH.textContent = holder;
+    }
+  }
   const mobile = document.getElementById('trackRecordHud');
   if (mobile) {
-    mobile.textContent = state.globalBest != null
-      ? `🏆 ${holder} ${time}`
+    mobile.innerHTML = state.globalBest != null
+      ? `🏆 ${flag} ${holder} ${time}`
       : '🏆 sin récord aún';
   }
 }
