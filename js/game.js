@@ -1296,6 +1296,8 @@ function onLapComplete(lapMs, now) {
       // Guardar fantasma
       state.ghostSamples = state.recordSamples.slice();
       saveGhost(trackId, state.ghostSamples);
+      // Pedir nombre y subir al leaderboard global
+      promptSubmitToGlobalLeaderboard(trackId, lapMs);
     } else {
       showToast('Vuelta ' + fmtTime(lapMs), 'green');
       engine.jingle(false);
@@ -2201,10 +2203,103 @@ function renderStatsPanel(tab) {
   if (!body) return;
   if (tab === 'badges') body.innerHTML = renderBadgesTab();
   else if (tab === 'leaderboard') body.innerHTML = renderLeaderboardTab();
+  else if (tab === 'global') renderGlobalLeaderboardTab(body);
   else body.innerHTML = renderStatsTab();
   document.querySelectorAll('.stats-tab').forEach(el => {
     el.classList.toggle('active', el.dataset.tab === tab);
   });
+}
+
+// ============================================================
+//  LEADERBOARD GLOBAL (cliente)
+// ============================================================
+const PLAYER_NAME_KEY = 'f1rush.playerName';
+function getPlayerCountry() {
+  // Inferimos por timezone (sin pedir permisos de geolocalización)
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+    const map = {
+      'Europe/Madrid':'ES','Europe/London':'GB','Europe/Paris':'FR','Europe/Berlin':'DE','Europe/Rome':'IT',
+      'America/Argentina/Buenos_Aires':'AR','America/Sao_Paulo':'BR','America/Santiago':'CL','America/Mexico_City':'MX',
+      'America/New_York':'US','America/Los_Angeles':'US','America/Chicago':'US','America/Lima':'PE',
+      'America/Bogota':'CO','America/Caracas':'VE','America/Montevideo':'UY','America/Asuncion':'PY',
+      'Asia/Tokyo':'JP','Asia/Singapore':'SG','Australia/Sydney':'AU',
+    };
+    return map[tz] || tz.split('/').pop().slice(0,3).toUpperCase();
+  } catch { return ''; }
+}
+async function submitGlobalLap(trackId, lapMs, name) {
+  try {
+    const r = await fetch('/api/leaderboard', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ trackId, ms: lapMs, name, country: getPlayerCountry() }),
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return await r.json();
+  } catch (e) {
+    return { error: e.message };
+  }
+}
+async function fetchGlobalLap(trackId) {
+  try {
+    const r = await fetch('/api/leaderboard?track=' + encodeURIComponent(trackId));
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return await r.json();
+  } catch (e) {
+    return { error: e.message, entries: [] };
+  }
+}
+function promptSubmitToGlobalLeaderboard(trackId, lapMs) {
+  const overlay = document.getElementById('lbSubmitOverlay');
+  const input = document.getElementById('lbName');
+  const msg = document.getElementById('lbSubmitMsg');
+  const timeEl = document.getElementById('lbSubmitTime');
+  if (!overlay) return;
+  timeEl.textContent = fmtTime(lapMs);
+  input.value = localStorage.getItem(PLAYER_NAME_KEY) || '';
+  msg.textContent = '';
+  overlay.classList.remove('hidden');
+  setTimeout(() => input.focus(), 100);
+
+  const submit = async () => {
+    const name = (input.value || '').trim();
+    if (name.length < 2) { msg.textContent = 'Nombre muy corto (mín 2 caracteres)'; return; }
+    localStorage.setItem(PLAYER_NAME_KEY, name);
+    msg.textContent = 'Subiendo...';
+    const result = await submitGlobalLap(trackId, lapMs, name);
+    if (result.error) {
+      msg.textContent = '⚠️ ' + result.error;
+    } else {
+      msg.textContent = '✓ Subido' + (result.rank ? ` · puesto #${result.rank}` : '');
+      setTimeout(() => overlay.classList.add('hidden'), 1200);
+    }
+  };
+  document.getElementById('lbSubmitBtn').onclick = submit;
+  document.getElementById('lbSkipBtn').onclick = () => overlay.classList.add('hidden');
+  input.onkeydown = (e) => { if (e.key === 'Enter') submit(); };
+}
+
+async function renderGlobalLeaderboardTab(body) {
+  body.innerHTML = '<p style="color:var(--fg-dim);padding:24px;text-align:center">Cargando…</p>';
+  // Mostrar las 24 pistas y dejar al usuario expandir
+  const sections = await Promise.all(TRACKS.map(async t => {
+    const data = await fetchGlobalLap(t.id);
+    if (data.error || !data.entries || data.entries.length === 0) return null;
+    const rows = data.entries.slice(0, 10).map((e, i) => `
+      <div class="lb-row">
+        <span class="lb-pos">${i+1}.</span>
+        <span class="lb-name">${(e.name||'?')}${e.country ? ' <span style="color:var(--fg-dim);font-size:10px">'+e.country+'</span>' : ''}</span>
+        <span class="lb-ms">${fmtTime(e.ms)}</span>
+      </div>`).join('');
+    return `<div class="lb-track"><h4>${t.flag||''} ${t.name}</h4>${rows}</div>`;
+  }));
+  const valid = sections.filter(Boolean);
+  if (valid.length === 0) {
+    body.innerHTML = '<p style="color:var(--fg-dim);padding:24px;text-align:center">Aún no hay tiempos en el leaderboard global. ¡Sé el primero!</p>';
+  } else {
+    body.innerHTML = valid.join('');
+  }
 }
 document.getElementById('statsBtn').addEventListener('click', () => {
   const panel = document.getElementById('statsPanel');

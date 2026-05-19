@@ -338,6 +338,7 @@ html, body, #app {
 .lb-row .lb-pos { color: var(--fg-dim); width: 24px; }
 .lb-row .lb-ms  { font-weight: 800; }
 .lb-row .lb-date { color: var(--fg-dim); font-size: 11px; }
+.lb-row .lb-name { flex: 1; margin: 0 8px; font-family: -apple-system, sans-serif; font-size: 12px; }
 
 /* =========== TRACK LIMITS =========== */
 .track-limits {
