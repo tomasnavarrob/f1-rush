@@ -558,16 +558,18 @@ html, body, #app {
      Los botones GAS/FRENO/arrows están en bottom:24 con altura 74 → top 98.
      Damos un margen seguro: panel sube hasta bottom:120 + safe-area-inset-bottom. */
   .sectors-panel {
-    /* Subir bien arriba de los joysticks (88+74+24=186px desde abajo) */
-    bottom: calc(200px + env(safe-area-inset-bottom, 0px));
-    gap: 3px;
-    max-width: 200px;
-    left: 50%;
-    transform: translateX(-50%);
+    /* Subir bien arriba de los joysticks. Joysticks ocupan bottom 24 a 24+74=98.
+       Damos un margen amplio (180+safe-area) para que nunca se toquen. */
+    bottom: calc(180px + env(safe-area-inset-bottom, 0px)) !important;
+    gap: 3px !important;
+    max-width: 200px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    pointer-events: none !important;
   }
-  .sector { min-width: 48px; padding: 4px 6px; font-size: 10px; }
-  .sector .sec-val { font-size: 12px; }
-  .sector .sec-delta { font-size: 9px; }
+  .sector { min-width: 48px !important; padding: 4px 6px !important; font-size: 10px !important; }
+  .sector .sec-val { font-size: 12px !important; }
+  .sector .sec-delta { font-size: 9px !important; }
   /* Minimapa arriba a la izquierda en móvil — usar safe-area para notch */
   .minimap-wrap {
     top: calc(12px + env(safe-area-inset-top, 0px));

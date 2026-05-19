@@ -955,35 +955,18 @@ function initGrassPattern() {
   const tile = document.createElement('canvas');
   tile.width = 128; tile.height = 128;
   const t = tile.getContext('2d');
-  // Base de hierba — más brillante para que se vea verde en pantallas con poco brillo
+  // Base sólida — sin sombras orgánicas grandes que hacían ver el césped oscuro
   t.fillStyle = '#2f6a3a';
   t.fillRect(0, 0, 128, 128);
-  // Sombra orgánica suave
-  for (let i = 0; i < 90; i++) {
-    const x = Math.random() * 128, y = Math.random() * 128;
-    const r = 6 + Math.random() * 14;
-    t.fillStyle = `rgba(20, 50, 25, ${0.04 + Math.random()*0.08})`;
-    t.beginPath(); t.arc(x, y, r, 0, Math.PI*2); t.fill();
-  }
-  // Píxeles de hierba aleatorios — paleta más verde y vibrante
-  for (let i = 0; i < 1400; i++) {
+  // Sólo píxeles pequeños de variación (texture noise sutil)
+  for (let i = 0; i < 600; i++) {
     const x = Math.floor(Math.random() * 128);
     const y = Math.floor(Math.random() * 128);
     const r = Math.random();
-    if (r < 0.45)      t.fillStyle = `rgba(95, 165, 95, ${0.45 + Math.random()*0.45})`;
-    else if (r < 0.75) t.fillStyle = `rgba(40, 90, 45, ${0.35 + Math.random()*0.35})`;
-    else if (r < 0.92) t.fillStyle = `rgba(140, 200, 130, ${0.25 + Math.random()*0.30})`;
-    else               t.fillStyle = `rgba(210, 225, 140, ${0.15 + Math.random()*0.25})`;
-    t.fillRect(x, y, Math.random() < 0.25 ? 2 : 1, 1);
-  }
-  // Algunas matas
-  for (let i = 0; i < 28; i++) {
-    const x = Math.random() * 128, y = Math.random() * 128;
-    t.fillStyle = `rgba(120, 190, 110, 0.6)`;
-    for (let j = 0; j < 4; j++) {
-      const angle = Math.random() * Math.PI * 2;
-      t.fillRect(x + Math.cos(angle)*2, y + Math.sin(angle)*2, 1, 2);
-    }
+    if (r < 0.5)       t.fillStyle = `rgba(120, 180, 110, 0.30)`;
+    else if (r < 0.85) t.fillStyle = `rgba(60, 110, 60, 0.25)`;
+    else               t.fillStyle = `rgba(160, 200, 140, 0.20)`;
+    t.fillRect(x, y, 1, 1);
   }
   grassPattern = ctx.createPattern(tile, 'repeat');
 }
