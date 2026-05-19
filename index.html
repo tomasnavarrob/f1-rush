@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <title>F1 Rush — 2026</title>
-  <link rel="stylesheet" href="css/style.css?v=10" />
+  <link rel="stylesheet" href="css/style.css?v=11" />
 </head>
 <body>
   <div id="app">
@@ -167,17 +167,6 @@
         </div>
       </div>
 
-      <!-- Modal para nombre del jugador (pedido una sola vez antes de la 1ª carrera) -->
-      <div class="overlay hidden" id="lbSubmitOverlay">
-        <div class="overlay-card">
-          <h2 id="lbSubmitTime">👋 ¿Cuál es tu nombre, piloto?</h2>
-          <input id="lbName" type="text" maxlength="16" placeholder="Tu nombre" autocomplete="off" style="width:240px;padding:10px 12px;background:var(--bg-1);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:var(--fg);font-size:14px;margin:14px 0 10px" />
-          <div id="lbSubmitMsg" style="font-size:12px;color:var(--fg-dim);min-height:16px;margin-bottom:14px">Lo usamos para subir tus tiempos al leaderboard global.</div>
-          <button id="lbSubmitBtn">Guardar y correr</button>
-          <button id="lbSkipBtn" style="background:transparent;border:1px solid rgba(255,255,255,0.1)">Jugar anónimo</button>
-        </div>
-      </div>
-
       <!-- Semáforo de partida F1 -->
       <div class="start-lights hidden" id="startLights">
         <div class="start-lights-row">
@@ -192,10 +181,21 @@
 
       <div class="toast hidden" id="toast"></div>
     </section>
+
+    <!-- Modal global (fuera de #game, para que se pueda ver desde el menú) -->
+    <div class="overlay hidden" id="lbSubmitOverlay" style="z-index:1000">
+      <div class="overlay-card">
+        <h2 id="lbSubmitTime">👋 ¿Cuál es tu nombre, piloto?</h2>
+        <input id="lbName" type="text" maxlength="16" placeholder="Tu nombre" autocomplete="off" style="width:240px;padding:10px 12px;background:var(--bg-1);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:var(--fg);font-size:14px;margin:14px 0 10px" />
+        <div id="lbSubmitMsg" style="font-size:12px;color:var(--fg-dim);min-height:16px;margin-bottom:14px">Lo usamos para subir tus tiempos al leaderboard global.</div>
+        <button id="lbSubmitBtn">Guardar y correr</button>
+        <button id="lbSkipBtn" style="background:transparent;border:1px solid rgba(255,255,255,0.1)">Jugar anónimo</button>
+      </div>
+    </div>
   </div>
 
-  <script src="js/tracks.js?v=10"></script>
-  <script src="js/audio.js?v=10"></script>
-  <script src="js/game.js?v=10"></script>
+  <script src="js/tracks.js?v=11"></script>
+  <script src="js/audio.js?v=11"></script>
+  <script src="js/game.js?v=11"></script>
 </body>
 </html>
