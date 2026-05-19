@@ -646,8 +646,10 @@ html, body, #app {
 
 /* =========== JUEGO =========== */
 #game {
-  /* Sin background: el canvas se dimensiona por su cuenta con viewport units */
-  background: transparent;
+  /* Fondo del mismo verde que el césped del canvas. Cubre las franjas
+     safe-area (esquinas redondeadas y home indicator del iPhone) donde
+     el canvas no llega exactamente. */
+  background: #2f6a3a;
 }
 #canvas {
   position: absolute;
